@@ -1,12 +1,47 @@
+globals
+[
+  grid-x-inc               ;; the amount of storage patches in the x direction
+  grid-y-inc               ;; the amount of storage patches in the y direction
+  
+  ;; patch areas
+  arraival-area            ;; area for arraival
+  consumption-area         ;; area for consumption
+  
+  ;; patch agentset
+  storage ;;agentset containing the patches that are storages
+  consum  ;;agentset containing the patches that are consumers
+  
+]
 
 to setup
   clear-all
+  setup-globals
   setup-patches
   setup-turtles
   do-plots
 end
 
+to setup-globals
+  set grid-x-inc 16 / grid-size-x
+  set grid-y-inc world-height / grid-size-y
+end
+
+;; Make the patches have appropriate colors, set up the storage agentset and consumer agentsets,
 to setup-patches
+  ;; initialize the global variables that hold patch areas
+  set arraival-area patches with
+    [pxcor < 8]
+  set consumption-area patches with
+    [pxcor > 24]
+    
+  ;; initialize the global variables that hold patch agentsets
+  set storage patches with
+    [(floor((pxcor + 7 - floor(grid-x-inc - 1)) mod grid-x-inc) = 0) or
+    (floor((pycor - floor(grid-y-inc - 1)) mod grid-y-inc) = 0) or (pycor = 0) and (pxcor > 7) and (pxcor < 25)]
+    
+  ask arraival-area [ set pcolor white]
+  ask consumption-area [ set pcolor brown]
+  ask storage [ set pcolor gray]
   
 end
 
@@ -20,9 +55,9 @@ GRAPHICS-WINDOW
 210
 10
 649
-470
-16
-16
+366
+-1
+-1
 13.0
 1
 10
@@ -33,10 +68,10 @@ GRAPHICS-WINDOW
 1
 1
 1
--16
-16
--16
-16
+0
+32
+0
+24
 0
 0
 1
@@ -48,7 +83,7 @@ BUTTON
 92
 88
 setup
-NIL
+setup
 NIL
 1
 T
@@ -57,6 +92,36 @@ NIL
 NIL
 NIL
 NIL
+
+SLIDER
+18
+106
+190
+139
+grid-size-x
+grid-size-x
+1
+9
+4
+1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+18
+150
+190
+183
+grid-size-y
+grid-size-y
+1
+9
+4
+1
+1
+NIL
+HORIZONTAL
 
 @#$#@#$#@
 WHAT IS IT?
