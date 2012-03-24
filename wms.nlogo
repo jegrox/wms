@@ -37,7 +37,7 @@ to setup-patches
   ;; initialize the global variables that hold patch agentsets
   set storage patches with
     [(floor((pxcor + 7 - floor(grid-x-inc - 1)) mod grid-x-inc) = 0) or
-    (floor((pycor - floor(grid-y-inc - 1)) mod grid-y-inc) = 0) or (pycor = 0) and (pxcor > 7) and (pxcor < 25)]
+    (floor(((pycor + 1) mod grid-y-inc)) = 0) or (pycor = 0) and (pxcor > 7) and (pxcor < 25)]
     
   ask arraival-area [ set pcolor white]
   ask consumption-area [ set pcolor brown]
