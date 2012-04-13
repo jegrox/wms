@@ -12,6 +12,16 @@ globals
   paths   ;;agentset containing the patches that are not storages
   consum  ;;agentset containing the patches that are consumers
   
+  helper agentsets
+  unassigned ;;boxes that are ready for storage assignation
+  unoccupied ;;patches that can hold a box
+  
+]
+
+breed [ boxes box ]
+boxes-own
+[
+  priority
 ]
 
 to setup
@@ -20,6 +30,11 @@ to setup
   setup-patches
   setup-turtles
   do-plots
+end
+
+to do
+  store-arrivals
+  ;select-for-consumption
 end
 
 to setup-globals
@@ -51,16 +66,41 @@ to setup-patches
   
 end
 
-breed [ boxes box ] 
 to setup-turtles
-  create-boxes initial-boxes
+  create-ordered-boxes initial-boxes
   ask boxes
   [
+    set priority random 10
     ifelse start-at-storage
     [ move-to one-of storage with [ not any? other turtles-here ] ]
     [ move-to one-of arrival-area with [ not any? other turtles-here ] ]
   ]
   
+end
+
+to store-arrivals
+  contract-net
+end
+
+to select-for-consumption
+end
+
+to move-boxes
+end
+
+to contract-net
+  set unassigned boxes-on arrival-area
+  if any? unassigned
+  [
+    set unoccupied storage with [ not any? boxes-here ]
+    ;ask unoccupied
+    ;[
+      ask max-one-of unassigned [ priority ]
+      [
+        move-to max-one-of unoccupied [ pxcor ]
+      ]
+    ;]
+  ]
 end
 
 to do-plots
@@ -82,8 +122,8 @@ GRAPHICS-WINDOW
 1
 1
 0
-1
-1
+0
+0
 1
 0
 32
@@ -119,7 +159,7 @@ grid-size-x
 grid-size-x
 1
 9
-8
+5
 1
 1
 NIL
@@ -134,7 +174,7 @@ grid-size-y
 grid-size-y
 1
 9
-8
+5
 1
 1
 NIL
@@ -148,8 +188,8 @@ SLIDER
 initial-boxes
 initial-boxes
 1
-50
-48
+100
+100
 1
 1
 NIL
@@ -161,7 +201,7 @@ INPUTBOX
 116
 257
 initial-boxes
-48
+100
 1
 0
 Number
@@ -176,6 +216,22 @@ start-at-storage
 1
 1
 -1000
+
+BUTTON
+114
+57
+177
+90
+start
+do
+T
+1
+T
+OBSERVER
+NIL
+NIL
+NIL
+NIL
 
 @#$#@#$#@
 WHAT IS IT?
