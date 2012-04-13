@@ -9,6 +9,7 @@ globals
   
   ;; patch agentset
   storage ;;agentset containing the patches that are storages
+  paths   ;;agentset containing the patches that are not storages
   consum  ;;agentset containing the patches that are consumers
   
 ]
@@ -22,7 +23,7 @@ to setup
 end
 
 to setup-globals
-  set-default-shape turtles "box"
+  set-default-shape boxes "box"
   
   set grid-x-inc 16 / grid-size-x
   set grid-y-inc world-height / grid-size-y
@@ -36,22 +37,28 @@ to setup-patches
   set consumption-area patches with
     [pxcor > 24]
     
-  ;; initialize the global variables that hold patch agentsets
-  set storage patches with
+  ;; initialize the global variables that hold path agentsets
+  set paths patches with
     [(floor((pxcor + 7 - floor(grid-x-inc - 1)) mod grid-x-inc) = 0) or
     (floor((pycor + max-pycor - floor(grid-y-inc - 1)) mod grid-y-inc) = 0) and (pxcor > 7) and (pxcor < 25)]
     
   ask arrival-area [ set pcolor white]
   ask consumption-area [ set pcolor brown]
-  ask storage [ set pcolor gray]
+  ask paths [ set pcolor gray]
+  
+  ;; initialize the global variables that hold the storage agentset
+  set storage patches with [ pcolor = black ]
   
 end
 
+breed [ boxes box ] 
 to setup-turtles
-  create-turtles initial-turtles
-  ask turtles
+  create-boxes initial-boxes
+  ask boxes
   [
-    move-to one-of arrival-area
+    ifelse start-at-storage
+    [ move-to one-of storage with [ not any? other turtles-here ] ]
+    [ move-to one-of arrival-area with [ not any? other turtles-here ] ]
   ]
   
 end
@@ -134,19 +141,41 @@ NIL
 HORIZONTAL
 
 SLIDER
-25
-222
-197
-255
-initial-turtles
-initial-turtles
+19
+256
+191
+289
+initial-boxes
+initial-boxes
 1
 50
-20
+48
 1
 1
 NIL
 HORIZONTAL
+
+INPUTBOX
+17
+197
+116
+257
+initial-boxes
+48
+1
+0
+Number
+
+SWITCH
+21
+10
+179
+43
+start-at-storage
+start-at-storage
+1
+1
+-1000
 
 @#$#@#$#@
 WHAT IS IT?
