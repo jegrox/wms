@@ -4,7 +4,7 @@ globals
   grid-y-inc               ;; the amount of storage patches in the y direction
   
   ;; patch areas
-  arraival-area            ;; area for arraival
+  arrival-area            ;; area for arraival
   consumption-area         ;; area for consumption
   
   ;; patch agentset
@@ -22,6 +22,8 @@ to setup
 end
 
 to setup-globals
+  set-default-shape turtles "box"
+  
   set grid-x-inc 16 / grid-size-x
   set grid-y-inc world-height / grid-size-y
 end
@@ -29,7 +31,7 @@ end
 ;; Make the patches have appropriate colors, set up the storage agentset and consumer agentsets,
 to setup-patches
   ;; initialize the global variables that hold patch areas
-  set arraival-area patches with
+  set arrival-area patches with
     [pxcor < 8]
   set consumption-area patches with
     [pxcor > 24]
@@ -39,17 +41,25 @@ to setup-patches
     [(floor((pxcor + 7 - floor(grid-x-inc - 1)) mod grid-x-inc) = 0) or
     (floor((pycor + max-pycor - floor(grid-y-inc - 1)) mod grid-y-inc) = 0) and (pxcor > 7) and (pxcor < 25)]
     
-  ask arraival-area [ set pcolor white]
+  ask arrival-area [ set pcolor white]
   ask consumption-area [ set pcolor brown]
   ask storage [ set pcolor gray]
   
 end
 
 to setup-turtles
+  create-turtles initial-turtles
+  ask turtles
+  [
+    move-to one-of arrival-area
+  ]
+  
 end
 
 to do-plots
 end
+
+
 @#$#@#$#@
 GRAPHICS-WINDOW
 210
@@ -102,7 +112,7 @@ grid-size-x
 grid-size-x
 1
 9
-4
+8
 1
 1
 NIL
@@ -117,7 +127,22 @@ grid-size-y
 grid-size-y
 1
 9
-4
+8
+1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+25
+222
+197
+255
+initial-turtles
+initial-turtles
+1
+50
+20
 1
 1
 NIL
