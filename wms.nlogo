@@ -15,6 +15,8 @@ globals
   helper agentsets
   unassigned ;;boxes that are ready for storage assignation
   unoccupied ;;patches that can hold a box
+  stored     ;;boxes that are already in the storage area
+  free       ;;available patches in teh consuption-area
   
 ]
 
@@ -34,7 +36,8 @@ end
 
 to do
   store-arrivals
-  ;select-for-consumption
+  select-for-consumption
+  tick
 end
 
 to setup-globals
@@ -74,21 +77,26 @@ to setup-turtles
     ifelse start-at-storage
     [ move-to one-of storage with [ not any? other turtles-here ] ]
     [ move-to one-of arrival-area with [ not any? other turtles-here ] ]
+    set label priority
   ]
   
 end
 
 to store-arrivals
-  contract-net
+  cn-arrivals
 end
 
 to select-for-consumption
+  if ticks mod 100 = 0
+  [
+    cn-consumption
+  ]
 end
 
 to move-boxes
 end
 
-to contract-net
+to cn-arrivals
   set unassigned boxes-on arrival-area
   if any? unassigned
   [
@@ -100,6 +108,18 @@ to contract-net
         move-to max-one-of unoccupied [ pxcor ]
       ]
     ;]
+  ]
+end
+
+to cn-consumption
+  set stored boxes-on storage
+  if any? stored
+  [
+    set free consumption-area with [not any? boxes-here]
+    ask stored with-max [ priority ]
+    [
+      move-to min-one-of free [ distance myself ]
+    ]
   ]
 end
 
@@ -129,8 +149,8 @@ GRAPHICS-WINDOW
 32
 0
 24
-0
-0
+1
+1
 1
 ticks
 
@@ -159,7 +179,7 @@ grid-size-x
 grid-size-x
 1
 9
-5
+9
 1
 1
 NIL
@@ -174,7 +194,7 @@ grid-size-y
 grid-size-y
 1
 9
-5
+9
 1
 1
 NIL
@@ -188,8 +208,8 @@ SLIDER
 initial-boxes
 initial-boxes
 1
-100
-100
+150
+112
 1
 1
 NIL
@@ -201,7 +221,7 @@ INPUTBOX
 116
 257
 initial-boxes
-100
+112
 1
 0
 Number
