@@ -5,8 +5,9 @@ globals
   consumption-inc          ;; the amount of consumption-areas
   
   ;; patch areas
-  arrival-area            ;; area for arraival
-  consumption-area         ;; area for consumption
+  arrival-area             ;; area for arraival
+  consumption-area         ;; paths for consumption area
+  consumption-area-paths   ;; area for consumption
   
   ;; patch agentset
   storage ;;agentset containing the patches that are storages
@@ -55,19 +56,22 @@ to setup-patches
   set arrival-area patches with
     [pxcor < 8]
   set consumption-area patches with
+    [pxcor > 25]
+  set consumption-area-paths patches with
     [(floor((pycor + max-pycor - floor(consumption-inc - 1)) mod consumption-inc) = 0) and (pxcor > 24) or (pxcor = 25) or (pxcor = max-pxcor) ]
-
-    
   set paths patches with
     [(floor((pxcor + 7 - floor(grid-x-inc - 1)) mod grid-x-inc) = 0) or
     (floor((pycor + max-pycor - floor(grid-y-inc - 1)) mod grid-y-inc) = 0) and (pxcor > 7) and (pxcor < 25)]
+  
     
   ask arrival-area [ set pcolor white]
-  ask consumption-area [ set pcolor brown]
+  ask consumption-area [set pcolor yellow]
+  ask consumption-area-paths [ set pcolor brown] 
   ask paths [ set pcolor gray]
   
   ;; initialize the global variables that hold the storage agentset
   set storage patches with [ pcolor = black ]
+  set consum patches with [pcolor = yellow]
   
 end
 
@@ -117,7 +121,7 @@ to cn-consumption
   set stored boxes-on storage
   if any? stored
   [
-    set free consumption-area with [not any? boxes-here]
+    set free consum with [not any? boxes-here]
     ask stored with-max [ priority ]
     [
       move-to min-one-of free [ distance myself ]
@@ -218,19 +222,46 @@ NIL
 HORIZONTAL
 
 SLIDER
-43
-267
-215
-300
+35
+266
+207
+299
 initial-boxes
 initial-boxes
 0
 100
-50
+100
 1
 1
 NIL
 HORIZONTAL
+
+SWITCH
+43
+54
+189
+87
+start-at-storage
+start-at-storage
+1
+1
+-1000
+
+BUTTON
+42
+14
+105
+47
+NIL
+do
+NIL
+1
+T
+OBSERVER
+NIL
+NIL
+NIL
+NIL
 
 @#$#@#$#@
 WHAT IS IT?
