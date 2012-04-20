@@ -2,10 +2,12 @@ globals
 [
   grid-x-inc               ;; the amount of storage patches in the x direction
   grid-y-inc               ;; the amount of storage patches in the y direction
+  consumption-inc          ;; the amount of consumption-areas
   
   ;; patch areas
-  arrival-area            ;; area for arraival
-  consumption-area         ;; area for consumption
+  arrival-area             ;; area for arraival
+  consumption-area         ;; paths for consumption area
+  consumption-area-paths   ;; area for consumption
   
   ;; patch agentset
   storage ;;agentset containing the patches that are storages
@@ -45,6 +47,7 @@ to setup-globals
   
   set grid-x-inc 16 / grid-size-x
   set grid-y-inc world-height / grid-size-y
+  set consumption-inc world-height / consumption-areas 
 end
 
 ;; Make the patches have appropriate colors, set up the storage agentset and consumer agentsets,
@@ -53,19 +56,22 @@ to setup-patches
   set arrival-area patches with
     [pxcor < 8]
   set consumption-area patches with
-    [pxcor > 24]
-    
-  ;; initialize the global variables that hold path agentsets
+    [pxcor > 25]
+  set consumption-area-paths patches with
+    [(floor((pycor + max-pycor - floor(consumption-inc - 1)) mod consumption-inc) = 0) and (pxcor > 24) or (pxcor = 25) or (pxcor = max-pxcor) ]
   set paths patches with
     [(floor((pxcor + 7 - floor(grid-x-inc - 1)) mod grid-x-inc) = 0) or
     (floor((pycor + max-pycor - floor(grid-y-inc - 1)) mod grid-y-inc) = 0) and (pxcor > 7) and (pxcor < 25)]
+  
     
   ask arrival-area [ set pcolor white]
-  ask consumption-area [ set pcolor brown]
+  ask consumption-area [set pcolor yellow]
+  ask consumption-area-paths [ set pcolor brown] 
   ask paths [ set pcolor gray]
   
   ;; initialize the global variables that hold the storage agentset
   set storage patches with [ pcolor = black ]
+  set consum patches with [pcolor = yellow]
   
 end
 
@@ -115,7 +121,7 @@ to cn-consumption
   set stored boxes-on storage
   if any? stored
   [
-    set free consumption-area with [not any? boxes-here]
+    set free consum with [not any? boxes-here]
     ask stored with-max [ priority ]
     [
       move-to min-one-of free [ distance myself ]
@@ -155,10 +161,10 @@ GRAPHICS-WINDOW
 ticks
 
 BUTTON
-26
-55
-92
-88
+124
+10
+190
+43
 setup
 setup
 NIL
@@ -171,66 +177,70 @@ NIL
 NIL
 
 SLIDER
-18
-106
-190
-139
+37
+92
+209
+125
 grid-size-x
 grid-size-x
 1
-9
-9
+10
+5
 1
 1
 NIL
 HORIZONTAL
 
 SLIDER
-18
-150
-190
-183
+37
+155
+209
+188
 grid-size-y
 grid-size-y
 1
-9
-9
+10
+5
 1
 1
 NIL
 HORIZONTAL
 
 SLIDER
-19
-256
-191
-289
-initial-boxes
-initial-boxes
+36
+212
+208
+245
+consumption-areas
+consumption-areas
 1
-150
-112
+10
+3
 1
 1
 NIL
 HORIZONTAL
 
-INPUTBOX
-17
-197
-116
-257
+SLIDER
+35
+266
+207
+299
 initial-boxes
-112
-1
+initial-boxes
 0
-Number
+100
+100
+1
+1
+NIL
+HORIZONTAL
 
 SWITCH
-21
-10
-179
 43
+54
+189
+87
 start-at-storage
 start-at-storage
 1
@@ -238,13 +248,13 @@ start-at-storage
 -1000
 
 BUTTON
-114
-57
-177
-90
-start
+42
+14
+105
+47
+NIL
 do
-T
+NIL
 1
 T
 OBSERVER
