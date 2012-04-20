@@ -2,6 +2,7 @@ globals
 [
   grid-x-inc               ;; the amount of storage patches in the x direction
   grid-y-inc               ;; the amount of storage patches in the y direction
+  consumption-inc          ;; the amount of consumption-areas
   
   ;; patch areas
   arrival-area            ;; area for arraival
@@ -26,6 +27,7 @@ to setup-globals
   
   set grid-x-inc 16 / grid-size-x
   set grid-y-inc world-height / grid-size-y
+  set consumption-inc world-height / consumption-areas 
 end
 
 ;; Make the patches have appropriate colors, set up the storage agentset and consumer agentsets,
@@ -34,9 +36,7 @@ to setup-patches
   set arrival-area patches with
     [pxcor < 8]
   set consumption-area patches with
-    [pxcor > 24]
-    
-  ;; initialize the global variables that hold patch agentsets
+    [(floor((pycor + max-pycor - floor(consumption-inc - 1)) mod consumption-inc) = 0) and (pxcor > 24) or (pxcor = 25) or (pxcor = max-pxcor) ]
   set storage patches with
     [(floor((pxcor + 7 - floor(grid-x-inc - 1)) mod grid-x-inc) = 0) or
     (floor((pycor + max-pycor - floor(grid-y-inc - 1)) mod grid-y-inc) = 0) and (pxcor > 7) and (pxcor < 25)]
@@ -88,10 +88,10 @@ GRAPHICS-WINDOW
 ticks
 
 BUTTON
-26
-55
-92
-88
+124
+10
+190
+43
 setup
 setup
 NIL
@@ -112,7 +112,7 @@ grid-size-x
 grid-size-x
 1
 9
-8
+5
 1
 1
 NIL
@@ -127,22 +127,37 @@ grid-size-y
 grid-size-y
 1
 9
-8
+6
 1
 1
 NIL
 HORIZONTAL
 
 SLIDER
-25
-222
-197
-255
+18
+193
+190
+226
 initial-turtles
 initial-turtles
 1
 50
 20
+1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+18
+238
+190
+271
+consumption-areas
+consumption-areas
+1
+10
+4
 1
 1
 NIL
