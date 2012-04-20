@@ -10,8 +10,21 @@ globals
   
   ;; patch agentset
   storage ;;agentset containing the patches that are storages
+  paths   ;;agentset containing the patches that are not storages
   consum  ;;agentset containing the patches that are consumers
   
+  helper agentsets
+  unassigned ;;boxes that are ready for storage assignation
+  unoccupied ;;patches that can hold a box
+  stored     ;;boxes that are already in the storage area
+  free       ;;available patches in teh consuption-area
+  
+]
+
+breed [ boxes box ]
+boxes-own
+[
+  priority
 ]
 
 to setup
@@ -22,8 +35,14 @@ to setup
   do-plots
 end
 
+to do
+  store-arrivals
+  select-for-consumption
+  tick
+end
+
 to setup-globals
-  set-default-shape turtles "box"
+  set-default-shape boxes "box"
   
   set grid-x-inc 16 / grid-size-x
   set grid-y-inc world-height / grid-size-y
@@ -37,23 +56,73 @@ to setup-patches
     [pxcor < 8]
   set consumption-area patches with
     [(floor((pycor + max-pycor - floor(consumption-inc - 1)) mod consumption-inc) = 0) and (pxcor > 24) or (pxcor = 25) or (pxcor = max-pxcor) ]
-  set storage patches with
+
+    
+  set paths patches with
     [(floor((pxcor + 7 - floor(grid-x-inc - 1)) mod grid-x-inc) = 0) or
     (floor((pycor + max-pycor - floor(grid-y-inc - 1)) mod grid-y-inc) = 0) and (pxcor > 7) and (pxcor < 25)]
     
   ask arrival-area [ set pcolor white]
   ask consumption-area [ set pcolor brown]
-  ask storage [ set pcolor gray]
+  ask paths [ set pcolor gray]
+  
+  ;; initialize the global variables that hold the storage agentset
+  set storage patches with [ pcolor = black ]
   
 end
 
 to setup-turtles
-  create-turtles initial-turtles
-  ask turtles
+  create-ordered-boxes initial-boxes
+  ask boxes
   [
-    move-to one-of arrival-area
+    set priority random 10
+    ifelse start-at-storage
+    [ move-to one-of storage with [ not any? other turtles-here ] ]
+    [ move-to one-of arrival-area with [ not any? other turtles-here ] ]
+    set label priority
   ]
   
+end
+
+to store-arrivals
+  cn-arrivals
+end
+
+to select-for-consumption
+  if ticks mod 100 = 0
+  [
+    cn-consumption
+  ]
+end
+
+to move-boxes
+end
+
+to cn-arrivals
+  set unassigned boxes-on arrival-area
+  if any? unassigned
+  [
+    set unoccupied storage with [ not any? boxes-here ]
+    ;ask unoccupied
+    ;[
+      ask max-one-of unassigned [ priority ]
+      [
+        move-to max-one-of unoccupied [ pxcor ]
+      ]
+    ;]
+  ]
+end
+
+to cn-consumption
+  set stored boxes-on storage
+  if any? stored
+  [
+    set free consumption-area with [not any? boxes-here]
+    ask stored with-max [ priority ]
+    [
+      move-to min-one-of free [ distance myself ]
+    ]
+  ]
 end
 
 to do-plots
@@ -75,15 +144,15 @@ GRAPHICS-WINDOW
 1
 1
 0
-1
-1
+0
+0
 1
 0
 32
 0
 24
-0
-0
+1
+1
 1
 ticks
 
@@ -102,66 +171,6 @@ NIL
 NIL
 NIL
 NIL
-
-SLIDER
-18
-106
-190
-139
-grid-size-x
-grid-size-x
-1
-9
-5
-1
-1
-NIL
-HORIZONTAL
-
-SLIDER
-18
-150
-190
-183
-grid-size-y
-grid-size-y
-1
-9
-6
-1
-1
-NIL
-HORIZONTAL
-
-SLIDER
-18
-193
-190
-226
-initial-turtles
-initial-turtles
-1
-50
-20
-1
-1
-NIL
-HORIZONTAL
-
-SLIDER
-18
-238
-190
-271
-consumption-areas
-consumption-areas
-1
-10
-4
-1
-1
-NIL
-HORIZONTAL
 
 @#$#@#$#@
 WHAT IS IT?
