@@ -162,9 +162,9 @@ ticks
 
 BUTTON
 124
-10
+14
 190
-43
+47
 setup
 setup
 NIL
@@ -254,7 +254,7 @@ BUTTON
 47
 NIL
 do
-NIL
+T
 1
 T
 OBSERVER
