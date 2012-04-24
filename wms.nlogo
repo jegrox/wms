@@ -5,7 +5,7 @@ globals
   consumption-inc          ;; the amount of consumption-areas
   
   ;; patch areas
-  arrival-area             ;; area for arraival
+  arrival-area             ;; area for arrival
   consumption-area         ;; paths for consumption area
   consumption-area-paths   ;; area for consumption
   
@@ -135,7 +135,18 @@ to new-arrivals
 end
 
 to store-arrivals
-  cn-arrivals
+  ;cn-arrivals
+  if storage-method = "cn-arrivals"
+      [cn-arrivals]
+  if storage-method = "random"
+      [random-storage]
+  if storage-method = "nearest"
+      [nearest-storage]
+  if storage-method = "arrival"
+      [arrival-storage]
+  if storage-method = "classified"
+      [classified-storage]
+      
 end
 
 to select-for-consumption
@@ -190,6 +201,65 @@ to consume
         die
       ]
     ]
+  ]
+end
+
+;;Stores the boxes randomly in any available space in the storage area
+to random-storage
+  set unassigned boxes-on arrival-area
+  if any? unassigned
+  [
+    set unoccupied storage with [ not any? boxes-here ]
+      ask max-one-of unassigned [ priority ]
+      [
+        move-to one-of unoccupied
+      ]
+  ]
+end
+
+;;Stores the boxes in the nearest available space from arrival
+to arrival-storage
+  set unassigned boxes-on arrival-area
+  if any? unassigned
+  [
+    set unoccupied storage with [ not any? boxes-here ]
+      ask max-one-of unassigned [ priority ]
+      [
+        move-to min-one-of unoccupied [distance myself]
+      ]
+  ]
+end
+
+;;Stores the boxes in the available space closest to any stored boxed
+to nearest-storage
+  set unassigned boxes-on arrival-area
+  set stored boxes-on storage
+  if any? unassigned
+  [
+    set unoccupied storage with [ not any? boxes-here ]
+      ask max-one-of unassigned [ priority ]
+      [
+        ifelse any? stored
+        [move-to min-one-of unoccupied [distance one-of stored]]
+        [move-to one-of unoccupied]
+      ]
+  ]
+end
+
+;;Stores the boxes in the nearest available space to another stored box of same charateristic, in this case of same color. 
+to classified-storage
+  set unassigned boxes-on arrival-area
+  set stored boxes-on storage
+  if any? unassigned
+  [
+    set unoccupied storage with [ not any? boxes-here ]
+      ask max-one-of unassigned [ priority ]
+      [
+        let c [color] of self
+        ifelse any? stored with [color = c]
+        [move-to (min-one-of unoccupied [distance one-of stored with [color = c ]])]
+        [move-to one-of unoccupied]
+      ]
   ]
 end
 
@@ -327,6 +397,16 @@ NIL
 NIL
 NIL
 NIL
+
+CHOOSER
+36
+317
+174
+362
+storage-method
+storage-method
+"cn-arrivals" "random" "nearest" "arrival" "classified"
+1
 
 @#$#@#$#@
 WHAT IS IT?
