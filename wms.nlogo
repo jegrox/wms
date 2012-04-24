@@ -17,6 +17,7 @@ globals
   helper agentsets
   unassigned ;;boxes that are ready for storage assignation
   unoccupied ;;patches that can hold a box
+  boxes-with-type ;;boxes that have the same type as the next order
   stored     ;;boxes that are already in the storage area
   free       ;;available patches in teh consuption-area
   
@@ -26,7 +27,25 @@ breed [ boxes box ]
 boxes-own
 [
   priority
+  product
 ]
+
+breed [ lifters lift ]
+lifters-own
+[
+  tasks
+]
+
+patches-own
+[
+  product_type
+]
+
+;breed [ consumers consumer ]
+;consumers-own
+;[
+;  product_type
+;]
 
 to setup
   clear-all
@@ -37,13 +56,16 @@ to setup
 end
 
 to do
+  new-arrivals
   store-arrivals
   select-for-consumption
+  consume
   tick
 end
 
 to setup-globals
   set-default-shape boxes "box"
+  set-default-shape lifters "truck"
   
   set grid-x-inc 16 / grid-size-x
   set grid-y-inc world-height / grid-size-y
@@ -64,14 +86,21 @@ to setup-patches
     (floor((pycor + max-pycor - floor(grid-y-inc - 1)) mod grid-y-inc) = 0) and (pxcor > 7) and (pxcor < 25)]
   
     
-  ask arrival-area [ set pcolor white]
+  ask arrival-area [
+    set pcolor white set product_type 0
+    ]
   ask consumption-area [set pcolor yellow]
-  ask consumption-area-paths [ set pcolor brown] 
-  ask paths [ set pcolor gray]
+  ask consumption-area-paths [ set pcolor brown set product_type 0] 
+  ask paths [ set pcolor gray set product_type 0]
   
   ;; initialize the global variables that hold the storage agentset
   set storage patches with [ pcolor = black ]
-  set consum patches with [pcolor = yellow]
+  set consum patches with [ pcolor = yellow ]
+  ask consum [
+    if pycor > 16 [ set product_type 1 ]
+    if pycor <= 16 and pycor > 8 [ set product_type 2 ]
+    if pycor <= 8 [ set product_type 3]
+  ]
   
 end
 
@@ -80,12 +109,29 @@ to setup-turtles
   ask boxes
   [
     set priority random 10
+    set product random 3 + 1
     ifelse start-at-storage
     [ move-to one-of storage with [ not any? other turtles-here ] ]
     [ move-to one-of arrival-area with [ not any? other turtles-here ] ]
-    set label priority
+    set label product
   ]
   
+  create-lifters 2 [
+    set color red
+    move-to one-of paths with [ not any? lifters-here ]
+  ]
+  
+end
+
+to new-arrivals
+  ;if ticks mod 20 = 0 [
+    create-boxes 1 [
+      set priority random 10
+      set product random 3 + 1
+      move-to one-of arrival-area with [ not any? other turtles-here ] 
+      set label product
+    ]
+  ;]
 end
 
 to store-arrivals
@@ -111,7 +157,8 @@ to cn-arrivals
     ;[
       ask max-one-of unassigned [ priority ]
       [
-        move-to max-one-of unoccupied [ pxcor ]
+        let storage-type product
+        move-to min-one-of unoccupied [distance one-of consum with [ product_type = storage-type ] ]
       ]
     ;]
   ]
@@ -122,12 +169,30 @@ to cn-consumption
   if any? stored
   [
     set free consum with [not any? boxes-here]
-    ask stored with-max [ priority ]
-    [
-      move-to min-one-of free [ distance myself ]
+    ask free [
+      let consum-type product_type
+      ask stored with [ product = consum-type ]
+      [
+        move-to one-of free with [ product_type = consum-type ]
+      ]
     ]
   ]
 end
+
+to consume
+  let next-type random 3 + 1
+  ask consum with [product_type = next-type ]
+  [
+    if any? boxes-here
+    [
+      ask one-of boxes-here
+      [
+        die
+      ]
+    ]
+  ]
+end
+
 
 to do-plots
 end
