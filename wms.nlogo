@@ -103,9 +103,14 @@ to setup-patches
   set storage patches with [ pcolor = black ]
   set consum patches with [ pcolor = yellow ]
   ask consum [
-    if pycor > 16 [ set product_type 1 ]
-    if pycor <= 16 and pycor > 8 [ set product_type 2 ]
-    if pycor <= 8 [ set product_type 3]
+    let product_no consumption-areas
+    while [product_no > 0]
+    [
+    if pycor <= consumption-inc * product_no and pycor > consumption-inc * (product_no - 1)  [ set product_type product_no ]
+    set product_no product_no - 1
+    ;if pycor <= 16 and pycor > 8 [ set product_type product_no ]
+    ;if pycor <= 8 [ set product_type product_no]
+    ]
   ]
   ask patches [ set utility 0 ]
   
@@ -133,14 +138,16 @@ to setup-turtles
 end
 
 to new-arrivals
-  ;if ticks mod 20 = 0 [
-    create-boxes 1 [
+  if ticks mod arrival-rate = 0 [
+    create-boxes arrival-quantity  [
       set priority random 10
       set product random 3 + 1
-      move-to one-of arrival-area with [ not any? other turtles-here ] 
+      ifelse any? arrival-area with [ not any? other turtles-here ]
+      [ move-to one-of arrival-area with [ not any? other turtles-here ] ]
+      [ user-message (word "maximum occupancy reached")]
       set label product
     ]
-  ;]
+  ]
 end
 
 to store-arrivals
@@ -201,9 +208,9 @@ to cn-consumption
 end
 
 to consume
-  if ticks mod 100 = 0
+  if ticks mod consumption-rate = 0
   [
-    let next-type random 3 + 1
+    let next-type random consumption-areas + 1
     ask consum with [product_type = next-type ]
     [
       if any? boxes-here
@@ -340,12 +347,15 @@ to nearest-storage
   if any? unassigned
   [
     set unoccupied storage with [ not any? boxes-here ]
+    if any? unoccupied
+    [
       ask max-one-of unassigned [ priority ]
       [
         ifelse any? stored
         [move-to min-one-of unoccupied [distance one-of stored]]
         [move-to one-of unoccupied]
       ]
+    ]
   ]
 end
 
@@ -410,9 +420,9 @@ GRAPHICS-WINDOW
 ticks
 
 BUTTON
-124
+100
 14
-190
+166
 47
 setup
 setup
@@ -426,25 +436,25 @@ NIL
 NIL
 
 SLIDER
-36
-189
-208
-222
+9
+215
+181
+248
 grid-size-x
 grid-size-x
 1
 10
-5
+3
 1
 1
 NIL
 HORIZONTAL
 
 SLIDER
-36
-233
-208
-266
+9
+253
+181
+286
 grid-size-y
 grid-size-y
 1
@@ -456,10 +466,10 @@ NIL
 HORIZONTAL
 
 SLIDER
-36
-278
-208
-311
+8
+292
+180
+325
 consumption-areas
 consumption-areas
 1
@@ -471,25 +481,25 @@ NIL
 HORIZONTAL
 
 SLIDER
-36
-321
-208
-354
+8
+331
+180
+364
 initial-boxes
 initial-boxes
 0
 100
-60
+61
 1
 1
 NIL
 HORIZONTAL
 
 SWITCH
-46
-68
-192
-101
+23
+55
+169
+88
 start-at-storage
 start-at-storage
 1
@@ -497,9 +507,9 @@ start-at-storage
 -1000
 
 BUTTON
-46
+22
 14
-109
+85
 47
 NIL
 do
@@ -513,14 +523,14 @@ NIL
 NIL
 
 CHOOSER
-50
-121
-188
-166
+30
+98
+168
+143
 storage-method
 storage-method
 "cn-arrivals" "random" "nearest" "arrival" "classified"
-0
+2
 
 MONITOR
 707
@@ -584,6 +594,47 @@ PENS
 "arrival" 1.0 0 -2674135 true
 "storage" 1.0 0 -16777216 true
 "consume" 1.0 0 -10899396 true
+
+SLIDER
+196
+53
+233
+203
+arrival-rate
+arrival-rate
+0
+100
+50
+1
+1
+NIL
+VERTICAL
+
+SLIDER
+196
+214
+233
+364
+consumption-rate
+consumption-rate
+0
+100
+50
+1
+1
+NIL
+VERTICAL
+
+INPUTBOX
+83
+149
+168
+209
+arrival-quantity
+10
+1
+0
+Number
 
 @#$#@#$#@
 WHAT IS IT?
