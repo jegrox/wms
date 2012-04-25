@@ -16,6 +16,7 @@ globals
   consum  ;;agentset containing the patches that are consumers
   
   helper agentsets
+  assigned   ;;boxes that have already being allocated
   unassigned ;;boxes that are ready for storage assignation
   unoccupied ;;patches that can hold a box
   boxes-with-type ;;boxes that have the same type as the next order
@@ -34,8 +35,10 @@ boxes-own
 breed [ lifters lifter ]
 lifters-own
 [
-  tasks
+  task-list
   subtask
+  ;curr-box
+  ;curr-dest
 ]
 
 patches-own
@@ -59,14 +62,14 @@ to setup
 end
 
 to do
-  new-arrivals
+  ;new-arrivals
   store-arrivals
-  select-for-consumption
-  consume
-  ;do-lifter-task
-  calculate-percentage
+  ;select-for-consumption
+  ;consume
+  do-lifter-task
+  ;calculate-percentage
   tick
-  do-plots
+  ;do-plots
 end
 
 to setup-globals
@@ -89,7 +92,8 @@ to setup-patches
     [(floor((pycor + max-pycor - floor(consumption-inc - 1)) mod consumption-inc) = 0) and (pxcor > 24) or (pxcor = 25) or (pxcor = max-pxcor) ]
   set paths patches with
     [(floor((pxcor + 7 - floor(grid-x-inc - 1)) mod grid-x-inc) = 0) or
-    (floor((pycor + max-pycor - floor(grid-y-inc - 1)) mod grid-y-inc) = 0) and (pxcor > 7) and (pxcor < 25)]
+    (floor((pycor + max-pycor - floor(grid-y-inc - 1)) mod grid-y-inc) = 0) or
+    pycor = max-pycor and (pxcor > 7) and (pxcor < 25)]
   
     
   ask arrival-area [
@@ -117,7 +121,7 @@ to setup-patches
 end
 
 to setup-turtles
-  create-ordered-boxes initial-boxes
+  create-boxes initial-boxes
   ask boxes
   [
     set priority random 10
@@ -126,13 +130,19 @@ to setup-turtles
     [ move-to one-of storage with [ not any? other turtles-here ] ]
     [ move-to one-of arrival-area with [ not any? other turtles-here ] ]
     set label product
+    set color brown
   ]
   
-  create-lifters 2 [
+  create-lifters 5 [
     set color red
     move-to one-of paths with [ not any? lifters-here ]
     set label who
     set subtask 0
+    set task-list []
+    
+    ;set curr-box one-of boxes
+    ;ask curr-box [ set color red ]
+    ;set curr-dest one-of storage
   ]
   
 end
@@ -181,8 +191,18 @@ to cn-arrivals
     ;[
       ask max-one-of unassigned [ priority ]
       [
-        let storage-type product
-        move-to min-one-of unoccupied [distance one-of consum with [ product_type = storage-type ] ]
+        if not any? my-in-links [
+          let storage-type product
+          ;move-to min-one-of unoccupied [distance one-of consum with [ product_type = storage-type ] ]
+          let destination min-one-of unoccupied [distance one-of consum with [ product_type = storage-type ] ]
+          let target self
+          ask min-one-of lifters [ distance self ]
+          [ 
+            create-link-to target
+            set task-list lput (list target destination) task-list
+            ;set assigned lput target assigned
+          ]
+        ]
       ]
     ;]
   ]
@@ -228,50 +248,59 @@ to do-lifter-task
   
   ;let frontier []
   
-  ask-concurrent lifters [
-    let target one-of boxes
-    let destination one-of storage
+  ask lifters [
     ;ask neighbors4 [
      ; set frontier lput self frontier
     ;]
-    if subtask = 0 [
-      face min-one-of (neighbors4 with [pcolor != black]) [distance target]
-      fd 1
-      set subtask 1
-    ]
     
-    if subtask = 1 [
-      ifelse xcor != [xcor] of target and ycor != [ycor] of target
-      [
-        let frontier (patch-set patch-ahead 1 patch-left-and-ahead 90 1 patch-right-and-ahead 90 1)
-        face min-one-of (frontier with [pcolor != black]) [distance target]
+    if not empty? task-list [
+      let target first first task-list
+      let destination last first task-list
+       
+      if subtask = 0 [
+        show task-list
+        ;create-link-to target
+        face min-one-of (neighbors4 with [pcolor != black]) [distance target]
         fd 1
+        set subtask 1
       ]
-      [
-        face target
+      
+      if subtask = 1 [
+        ifelse xcor != [xcor] of target or ycor != [ycor] of target
+        [
+          let frontier (patch-set patch-ahead 1 patch-left-and-ahead 90 1 patch-right-and-ahead 90 1)
+          face min-one-of (frontier with [pcolor != black]) [distance target]
+          fd 1
+        ]
+        [
+          ;face curr-box
+          ;fd 1
+          set subtask 2
+        ]
+      ]
+      
+      if subtask = 2 [
+        ask link [who] of self [who] of target [ tie ] ;set endpoint1 end1 set endpoint2 end2 ]
+        face min-one-of (neighbors4 with [pcolor != black]) [distance destination]
         fd 1
-        set subtask 2
+        set subtask 3
       ]
-    ]
-    
-    if subtask = 2 [
-      face min-one-of (neighbors4 with [pcolor != black]) [distance destination]
-      fd 1
-      set subtask 3
-    ]
-    if subtask = 3 [
-      ifelse patch-here != destination ;xcor != [xcor] of destination and ycor != [ycor] of destination ]
-      [
-        let frontier (patch-set patch-ahead 1 patch-left-and-ahead 90 1 patch-right-and-ahead 90 1)
-        ifelse member? destination frontier
-        [ face destination ]
-        [ face min-one-of (frontier with [pcolor != black]) [distance destination] ]
-        fd 1
-        ;face destination
-      ]
-      [
-        bk 1
-        set subtask 0
+      if subtask = 3 [
+        ifelse patch-here != destination ;xcor != [xcor] of destination and ycor != [ycor] of destination ]
+        [
+          let frontier (patch-set patch-ahead 1 patch-left-and-ahead 90 1 patch-right-and-ahead 90 1)
+          ifelse member? destination frontier
+          [ face destination ]
+          [ face min-one-of (frontier with [pcolor != black]) [distance destination] ]
+          fd 1
+          ;face destination
+        ]
+        [
+          ask link [who] of self [who] of target [ untie die ]
+          bk 1
+          set task-list but-first task-list
+          set subtask 0
+        ]
       ]
     ]
   ]
@@ -444,7 +473,7 @@ grid-size-x
 grid-size-x
 1
 10
-3
+10
 1
 1
 NIL
@@ -459,7 +488,7 @@ grid-size-y
 grid-size-y
 1
 10
-5
+10
 1
 1
 NIL
