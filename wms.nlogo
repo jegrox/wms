@@ -3,6 +3,7 @@ globals
   grid-x-inc               ;; the amount of storage patches in the x direction
   grid-y-inc               ;; the amount of storage patches in the y direction
   consumption-inc          ;; the amount of consumption-areas
+  percent-occupy-storage   ;; what percet of storegae is occuoy
   
   ;; patch areas
   arrival-area             ;; area for arrival
@@ -60,7 +61,9 @@ to do
   store-arrivals
   select-for-consumption
   consume
+  calculate-percentage
   tick
+  do-plots
 end
 
 to setup-globals
@@ -150,7 +153,7 @@ to store-arrivals
 end
 
 to select-for-consumption
-  if ticks mod 100 = 0
+  if ticks mod 10 = 0
   [
     cn-consumption
   ]
@@ -180,25 +183,32 @@ to cn-consumption
   if any? stored
   [
     set free consum with [not any? boxes-here]
-    ask free [
+    ask one-of free
+    [ 
       let consum-type product_type
-      ask stored with [ product = consum-type ]
-      [
-        move-to one-of free with [ product_type = consum-type ]
-      ]
+      ;ask stored with [ product = consum-type ]
+      ;[
+        ask max-one-of stored [ priority ] 
+        [
+          move-to one-of free with [ product_type = consum-type ]
+        ]
+      ;]
     ]
   ]
 end
 
 to consume
-  let next-type random 3 + 1
-  ask consum with [product_type = next-type ]
+  if ticks mod 100 = 0
   [
-    if any? boxes-here
+    let next-type random 3 + 1
+    ask consum with [product_type = next-type ]
     [
-      ask one-of boxes-here
+      if any? boxes-here
       [
-        die
+        ask one-of boxes-here
+        [
+          die
+        ]
       ]
     ]
   ]
@@ -263,16 +273,27 @@ to classified-storage
   ]
 end
 
+to calculate-percentage
+    set percent-occupy-storage ((count boxes-on storage)/ (count storage)) * 100
+end
+
 
 to do-plots
+  set-current-plot "Totals"
+  set-current-plot-pen "arrival"
+  plot count boxes-on arrival-area
+  set-current-plot-pen "storage"
+  plot count boxes-on storage
+  set-current-plot-pen "consume"
+  plot count boxes-on consumption-area
 end
 
 
 @#$#@#$#@
 GRAPHICS-WINDOW
-210
+246
 10
-649
+685
 366
 -1
 -1
@@ -312,10 +333,10 @@ NIL
 NIL
 
 SLIDER
-37
-92
-209
-125
+36
+189
+208
+222
 grid-size-x
 grid-size-x
 1
@@ -327,10 +348,10 @@ NIL
 HORIZONTAL
 
 SLIDER
-37
-155
-209
-188
+36
+233
+208
+266
 grid-size-y
 grid-size-y
 1
@@ -343,9 +364,9 @@ HORIZONTAL
 
 SLIDER
 36
-212
+278
 208
-245
+311
 consumption-areas
 consumption-areas
 1
@@ -357,25 +378,25 @@ NIL
 HORIZONTAL
 
 SLIDER
-35
-266
-207
-299
+36
+321
+208
+354
 initial-boxes
 initial-boxes
 0
 100
-100
+20
 1
 1
 NIL
 HORIZONTAL
 
 SWITCH
-43
-54
-189
-87
+46
+68
+192
+101
 start-at-storage
 start-at-storage
 1
@@ -383,9 +404,9 @@ start-at-storage
 -1000
 
 BUTTON
-42
+46
 14
-105
+109
 47
 NIL
 do
@@ -399,14 +420,77 @@ NIL
 NIL
 
 CHOOSER
-36
-317
-174
-362
+50
+121
+188
+166
 storage-method
 storage-method
 "cn-arrivals" "random" "nearest" "arrival" "classified"
 1
+
+MONITOR
+707
+13
+764
+58
+arrived
+count boxes-on arrival-area
+3
+1
+11
+
+MONITOR
+777
+13
+834
+58
+stored
+count boxes-on storage
+3
+1
+11
+
+MONITOR
+846
+13
+946
+58
+on consumption
+count boxes-on patches with [ pcolor = yellow]
+3
+1
+11
+
+MONITOR
+707
+73
+779
+118
+% storage
+percent-occupy-storage
+2
+1
+11
+
+PLOT
+707
+135
+978
+342
+Totals
+time
+totals
+0.0
+10.0
+0.0
+110.0
+true
+true
+PENS
+"arrival" 1.0 0 -2674135 true
+"storage" 1.0 0 -16777216 true
+"consume" 1.0 0 -10899396 true
 
 @#$#@#$#@
 WHAT IS IT?
