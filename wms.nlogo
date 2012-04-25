@@ -31,15 +31,17 @@ boxes-own
   product
 ]
 
-breed [ lifters lift ]
+breed [ lifters lifter ]
 lifters-own
 [
   tasks
+  subtask
 ]
 
 patches-own
 [
   product_type
+  utility
 ]
 
 ;breed [ consumers consumer ]
@@ -61,6 +63,7 @@ to do
   store-arrivals
   select-for-consumption
   consume
+  ;do-lifter-task
   calculate-percentage
   tick
   do-plots
@@ -104,6 +107,7 @@ to setup-patches
     if pycor <= 16 and pycor > 8 [ set product_type 2 ]
     if pycor <= 8 [ set product_type 3]
   ]
+  ask patches [ set utility 0 ]
   
 end
 
@@ -122,6 +126,8 @@ to setup-turtles
   create-lifters 2 [
     set color red
     move-to one-of paths with [ not any? lifters-here ]
+    set label who
+    set subtask 0
   ]
   
 end
@@ -157,9 +163,6 @@ to select-for-consumption
   [
     cn-consumption
   ]
-end
-
-to move-boxes
 end
 
 to cn-arrivals
@@ -212,6 +215,96 @@ to consume
       ]
     ]
   ]
+end
+
+to do-lifter-task
+  
+  ;let frontier []
+  
+  ask-concurrent lifters [
+    let target one-of boxes
+    let destination one-of storage
+    ;ask neighbors4 [
+     ; set frontier lput self frontier
+    ;]
+    if subtask = 0 [
+      face min-one-of (neighbors4 with [pcolor != black]) [distance target]
+      fd 1
+      set subtask 1
+    ]
+    
+    if subtask = 1 [
+      ifelse xcor != [xcor] of target and ycor != [ycor] of target
+      [
+        let frontier (patch-set patch-ahead 1 patch-left-and-ahead 90 1 patch-right-and-ahead 90 1)
+        face min-one-of (frontier with [pcolor != black]) [distance target]
+        fd 1
+      ]
+      [
+        face target
+        fd 1
+        set subtask 2
+      ]
+    ]
+    
+    if subtask = 2 [
+      face min-one-of (neighbors4 with [pcolor != black]) [distance destination]
+      fd 1
+      set subtask 3
+    ]
+    if subtask = 3 [
+      ifelse patch-here != destination ;xcor != [xcor] of destination and ycor != [ycor] of destination ]
+      [
+        let frontier (patch-set patch-ahead 1 patch-left-and-ahead 90 1 patch-right-and-ahead 90 1)
+        ifelse member? destination frontier
+        [ face destination ]
+        [ face min-one-of (frontier with [pcolor != black]) [distance destination] ]
+        fd 1
+        ;face destination
+      ]
+      [
+        bk 1
+        set subtask 0
+      ]
+    ]
+  ]
+end
+
+to complete-task-2
+  ;set tasks []
+  ;let task1 []
+  ;set task1 lput one-of boxes task1
+  ;set task1 lput one-of storage task1
+  ;set tasks lput task1 tasks
+  
+  let target one-of boxes
+  let destination one-of storage
+  
+  let bfs-list []
+  let explored []
+  
+  ask lifter 20 [
+    let current target
+    let current-utility 0
+    ask current [ set utility 100 ]
+    set bfs-list fput patch-at [xcor] of target [ycor] of target bfs-list
+    while [ patch-here != patch-at [pxcor] of current [pycor] of current ]
+    [
+      ask current [
+        set current-utility utility
+        ask neighbors4 [
+          if not member? self explored [ set bfs-list lput self bfs-list 
+            set utility current-utility - 1]
+        ]
+        set bfs-list but-first bfs-list
+        set plabel utility
+        set plabel-color 0
+        set explored lput current explored
+        set current first bfs-list
+      ]
+    ]
+  ]
+  tick
 end
 
 ;;Stores the boxes randomly in any available space in the storage area
@@ -386,7 +479,7 @@ initial-boxes
 initial-boxes
 0
 100
-20
+60
 1
 1
 NIL
@@ -427,7 +520,7 @@ CHOOSER
 storage-method
 storage-method
 "cn-arrivals" "random" "nearest" "arrival" "classified"
-1
+0
 
 MONITOR
 707
