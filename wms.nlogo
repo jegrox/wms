@@ -219,16 +219,33 @@ to cn-consumption
   if any? stored
   [
     set free consum with [not any? boxes-here]
-    ask one-of free
-    [ 
-      let consum-type product_type
-      ;ask stored with [ product = consum-type ]
-      ;[
+    if any? free [
+      ask one-of free
+      [ 
         ask max-one-of stored [ priority ] 
         [
-          move-to one-of free with [ product = consum-type ]
+          let consum-type product
+          let destination one-of free with [ product_type = consum-type ]
+          let target self
+          
+          ifelse lifters-available
+          [
+            if not any? my-in-links [
+              let dist-to-dest distance destination
+              
+              ask min-one-of lifters [ distance self ]
+              [
+                create-link-to target
+                let cost distance target + dist-to-dest
+                set task-list lput (list target destination cost) task-list
+              ]
+            ]
+          ]
+          [ 
+            move-to destination
+          ]
         ]
-      ;]
+      ]
     ]
   ]
 end
@@ -264,6 +281,7 @@ to do-lifter-task
     
     if not empty? task-list [
       let target first first task-list
+      let target-patch patch [xcor] of target [ycor] of target
       let destination item 1 first task-list
        
       if subtask = 0 [
@@ -275,17 +293,24 @@ to do-lifter-task
       ]
       
       if subtask = 1 [
-        ifelse xcor != [xcor] of target or ycor != [ycor] of target
-        [
+        ;ifelse xcor != [xcor] of target or ycor != [ycor] of target
+        ;ifelse patch-ahead 1 != target-patch
+        ;[
           let frontier (patch-set patch-ahead 1 patch-left-and-ahead 90 1 patch-right-and-ahead 90 1)
-          face min-one-of (frontier with [pcolor != black]) [distance target]
-          fd 1
-        ]
-        [
-          ;face curr-box
-          ;fd 1
-          set subtask 2
-        ]
+          ifelse member? target-patch frontier
+          [ 
+            face target-patch
+            set subtask 2
+          ]
+          [
+            face min-one-of (frontier) [distance target]
+            fd 1
+          ]
+        ;]
+        ;[
+         ; fd 1
+          ;set subtask 2
+        ;]
       ]
       
       if subtask = 2 [
@@ -295,22 +320,21 @@ to do-lifter-task
         set subtask 3
       ]
       if subtask = 3 [
-        ifelse patch-here != destination ;xcor != [xcor] of destination and ycor != [ycor] of destination ]
-        [
+        ;ifelse patch-ahead 1 != destination ;xcor != [xcor] of destination and ycor != [ycor] of destination ]
+        ;[
           let frontier (patch-set patch-ahead 1 patch-left-and-ahead 90 1 patch-right-and-ahead 90 1)
           ifelse member? destination frontier
-          [ face destination ]
-          [ face min-one-of (frontier with [pcolor != black]) [distance destination] ]
-          fd 1
+          [ 
+            face destination
+            ask link [who] of self [who] of target [ untie die ]
+            ;bk 1
+            ;last first task-list
+            set task-list but-first task-list
+            set subtask 0
+            ]
+          [ face min-one-of (frontier with [pcolor != black]) [distance destination] fd 1]
+          ;fd 1
           ;face destination
-        ]
-        [
-          ask link [who] of self [who] of target [ untie die ]
-          bk 1
-          set total-displacement total-displacement + last first task-list
-          set task-list but-first task-list
-          set subtask 0
-        ]
       ]
     ]
   ]
@@ -625,7 +649,7 @@ CHOOSER
 storage-method
 storage-method
 "cn-arrivals" "random" "nearest" "arrival" "classified"
-2
+0
 
 MONITOR
 707
@@ -714,7 +738,7 @@ consumption-rate
 consumption-rate
 0
 100
-79
+55
 1
 1
 NIL
