@@ -62,14 +62,14 @@ to setup
 end
 
 to do
-  ;new-arrivals
+  new-arrivals
   store-arrivals
-  ;select-for-consumption
-  ;consume
+  select-for-consumption
+  consume
   do-lifter-task
-  ;calculate-percentage
+  calculate-percentage
   tick
-  ;do-plots
+  do-plots
 end
 
 to setup-globals
@@ -130,13 +130,12 @@ to setup-turtles
     [ move-to one-of storage with [ not any? other turtles-here ] ]
     [ move-to one-of arrival-area with [ not any? other turtles-here ] ]
     set label product
-    set color brown
+    ;set color brown
   ]
   
-  create-lifters 5 [
+  create-lifters n-of-lifters [
     set color red
     move-to one-of paths with [ not any? lifters-here ]
-    set label who
     set subtask 0
     set task-list []
     
@@ -511,7 +510,7 @@ consumption-areas
 consumption-areas
 1
 10
-3
+5
 1
 1
 NIL
@@ -526,7 +525,7 @@ initial-boxes
 initial-boxes
 0
 100
-61
+80
 1
 1
 NIL
@@ -567,7 +566,7 @@ CHOOSER
 storage-method
 storage-method
 "cn-arrivals" "random" "nearest" "arrival" "classified"
-2
+0
 
 MONITOR
 707
@@ -635,13 +634,13 @@ PENS
 SLIDER
 196
 53
-233
+229
 203
 arrival-rate
 arrival-rate
 0
 100
-50
+98
 1
 1
 NIL
@@ -650,13 +649,13 @@ VERTICAL
 SLIDER
 196
 214
-233
+229
 364
 consumption-rate
 consumption-rate
 0
 100
-50
+79
 1
 1
 NIL
@@ -668,10 +667,36 @@ INPUTBOX
 168
 209
 arrival-quantity
-10
+5
 1
 0
 Number
+
+SLIDER
+9
+428
+181
+461
+n-of-lifters
+n-of-lifters
+0
+20
+5
+1
+1
+NIL
+HORIZONTAL
+
+SWITCH
+12
+380
+128
+413
+lifters-on
+lifters-on
+1
+1
+-1000
 
 @#$#@#$#@
 WHAT IS IT?
