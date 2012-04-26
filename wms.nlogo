@@ -3,7 +3,7 @@ globals
   grid-x-inc               ;; the amount of storage patches in the x direction
   grid-y-inc               ;; the amount of storage patches in the y direction
   consumption-inc          ;; the amount of consumption-areas
-  percent-occupy-storage   ;; what percet of storegae is occuoy
+  percent-occupy-storage   ;; what percent of storage is occupy
   
   ;; patch areas
   arrival-area             ;; area for arrival
@@ -673,10 +673,10 @@ arrival-quantity
 Number
 
 SLIDER
-9
-428
-181
-461
+137
+381
+309
+414
 n-of-lifters
 n-of-lifters
 0
@@ -688,9 +688,9 @@ NIL
 HORIZONTAL
 
 SWITCH
-12
+9
 380
-128
+125
 413
 lifters-on
 lifters-on
