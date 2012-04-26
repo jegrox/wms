@@ -172,7 +172,7 @@ to store-arrivals
 end
 
 to select-for-consumption
-  if ticks mod 10 = 0
+  if ticks mod consumption-rate = 0
   [
     cn-consumption
   ]
@@ -190,27 +190,27 @@ to cn-arrivals
         let storage-type product
         let destination min-one-of unoccupied [distance one-of consum with [ product_type = storage-type ] ]
         let target self
-        
-        ifelse lifters-available
-        [
-          if not any? my-in-links [
+        if any? patch-set destination [
+          ifelse lifters-available
+          [
+            if not any? my-in-links [
             
             
-            let dist-to-dest distance destination
-            
-            ask min-one-of lifters [ distance self ]
-            [ 
-              create-link-to target
-              let cost distance target + dist-to-dest
-              set task-list lput (list target destination cost) task-list
+              let dist-to-dest distance destination
+              
+              ask min-one-of lifters [ distance self ]
+              [ 
+                create-link-to target
+                let cost distance target + dist-to-dest
+                set task-list lput (list target destination cost) task-list
+              ]
             ]
           ]
-        ]
-        [
-          move-to destination
+          [
+            move-to destination
+          ]
         ]
       ]
-    ;]
   ]
 end
 
@@ -218,16 +218,17 @@ to cn-consumption
   set stored boxes-on storage
   if any? stored
   [
-    set free consum with [not any? boxes-here]
-    if any? free [
-      ask one-of free
-      [ 
-        ask max-one-of stored [ priority ] 
-        [
-          let consum-type product
-          let destination one-of free with [ product_type = consum-type ]
-          let target self
-          
+    ;set free consum with [not any? boxes-here]
+    ;if any? free [
+      ;ask one-of free
+      ;[ 
+    ask max-one-of stored [ priority ] 
+      [
+        let consum-type product
+        let destination one-of consum with [ not any? boxes-here and product_type = consum-type ]
+        let target self
+        
+        if any? patch-set destination [
           ifelse lifters-available
           [
             if not any? my-in-links [
@@ -246,7 +247,6 @@ to cn-consumption
           ]
         ]
       ]
-    ]
   ]
 end
 
@@ -256,12 +256,10 @@ to consume
     let next-type random consumption-areas + 1
     ask consum with [product_type = next-type ]
     [
-      if any? boxes-here
+      let to-be-consumed one-of boxes-here with [ not any? my-in-links ]
+      if any? turtle-set to-be-consumed
       [
-        ask one-of boxes-here
-        [
-          die
-        ]
+        ask to-be-consumed [ die ]
       ]
     ]
   ]
@@ -738,7 +736,7 @@ consumption-rate
 consumption-rate
 0
 100
-55
+73
 1
 1
 NIL
@@ -764,7 +762,7 @@ n-of-lifters
 n-of-lifters
 0
 20
-5
+10
 1
 1
 NIL
