@@ -3,7 +3,8 @@ globals
   grid-x-inc               ;; the amount of storage patches in the x direction
   grid-y-inc               ;; the amount of storage patches in the y direction
   consumption-inc          ;; the amount of consumption-areas
-  percent-occupy-storage   ;; what percet of storegae is occuoy
+  percent-occupy-storage   ;; what percent of storage is occupy
+  total-displacement
   
   ;; patch areas
   arrival-area             ;; area for arrival
@@ -15,7 +16,7 @@ globals
   paths   ;;agentset containing the patches that are not storages
   consum  ;;agentset containing the patches that are consumers
   
-  helper agentsets
+  ;; helper agentsets
   assigned   ;;boxes that have already being allocated
   unassigned ;;boxes that are ready for storage assignation
   unoccupied ;;patches that can hold a box
@@ -125,7 +126,7 @@ to setup-turtles
   ask boxes
   [
     set priority random 10
-    set product random 3 + 1
+    set product random consumption-areas + 1
     ifelse start-at-storage
     [ move-to one-of storage with [ not any? other turtles-here ] ]
     [ move-to one-of arrival-area with [ not any? other turtles-here ] ]
@@ -225,7 +226,7 @@ to cn-consumption
       ;[
         ask max-one-of stored [ priority ] 
         [
-          move-to one-of free with [ product_type = consum-type ]
+          move-to one-of free with [ product = consum-type ]
         ]
       ;]
     ]
@@ -306,6 +307,7 @@ to do-lifter-task
         [
           ask link [who] of self [who] of target [ untie die ]
           bk 1
+          set total-displacement total-displacement + last first task-list
           set task-list but-first task-list
           set subtask 0
         ]
@@ -469,10 +471,10 @@ to classified-storage
   ]
 end
 
+;; Calculates the percentage of occupied storage 
 to calculate-percentage
     set percent-occupy-storage ((count boxes-on storage)/ (count storage)) * 100
 end
-
 
 to do-plots
   set-current-plot "Totals"
@@ -754,6 +756,17 @@ lifters-available
 0
 1
 -1000
+
+MONITOR
+808
+73
+893
+118
+displacement
+total-displacement
+3
+1
+11
 
 @#$#@#$#@
 WHAT IS IT?
