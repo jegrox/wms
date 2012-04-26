@@ -196,10 +196,12 @@ to cn-arrivals
           ;move-to min-one-of unoccupied [distance one-of consum with [ product_type = storage-type ] ]
           let destination min-one-of unoccupied [distance one-of consum with [ product_type = storage-type ] ]
           let target self
+          let dist-to-dest distance destination
           ask min-one-of lifters [ distance self ]
           [ 
             create-link-to target
-            set task-list lput (list target destination) task-list
+            let cost distance target + dist-to-dest
+            set task-list lput (list target destination cost) task-list
             ;set assigned lput target assigned
           ]
         ]
@@ -245,8 +247,11 @@ to consume
 end
 
 to do-lifter-task
-  
   ;let frontier []
+  
+  ;if activate-negotiation [
+  ;  zeuthen
+  ;]
   
   ask lifters [
     ;ask neighbors4 [
@@ -255,7 +260,7 @@ to do-lifter-task
     
     if not empty? task-list [
       let target first first task-list
-      let destination last first task-list
+      let destination item 1 first task-list
        
       if subtask = 0 [
         show task-list
@@ -304,6 +309,9 @@ to do-lifter-task
       ]
     ]
   ]
+end
+
+to zeuthen
 end
 
 to complete-task-2
