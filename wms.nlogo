@@ -138,10 +138,6 @@ to setup-turtles
     move-to one-of paths with [ not any? lifters-here ]
     set subtask 0
     set task-list []
-    
-    ;set curr-box one-of boxes
-    ;ask curr-box [ set color red ]
-    ;set curr-dest one-of storage
   ]
   
 end
@@ -190,19 +186,27 @@ to cn-arrivals
     ;[
       ask max-one-of unassigned [ priority ]
       [
-        if not any? my-in-links [
-          let storage-type product
-          ;move-to min-one-of unoccupied [distance one-of consum with [ product_type = storage-type ] ]
-          let destination min-one-of unoccupied [distance one-of consum with [ product_type = storage-type ] ]
-          let target self
-          let dist-to-dest distance destination
-          ask min-one-of lifters [ distance self ]
-          [ 
-            create-link-to target
-            let cost distance target + dist-to-dest
-            set task-list lput (list target destination cost) task-list
-            ;set assigned lput target assigned
+        let storage-type product
+        let destination min-one-of unoccupied [distance one-of consum with [ product_type = storage-type ] ]
+        let target self
+        
+        ifelse lifters-available
+        [
+          if not any? my-in-links [
+            
+            
+            let dist-to-dest distance destination
+            
+            ask min-one-of lifters [ distance self ]
+            [ 
+              create-link-to target
+              let cost distance target + dist-to-dest
+              set task-list lput (list target destination cost) task-list
+            ]
           ]
+        ]
+        [
+          move-to destination
         ]
       ]
     ;]
@@ -358,7 +362,24 @@ to random-storage
     set unoccupied storage with [ not any? boxes-here ]
       ask max-one-of unassigned [ priority ]
       [
-        move-to one-of unoccupied
+        let destination one-of unoccupied
+        let target self
+        
+        ifelse lifters-available
+        [
+          if not any? my-in-links [
+            let dist-to-dest distance destination
+            ask min-one-of lifters [ distance self ]
+            [
+              create-link-to target
+              let cost distance target + dist-to-dest
+              set task-list lput (list target destination cost) task-list
+            ]
+          ]
+        ]
+        [
+          move-to destination
+        ]
       ]
   ]
 end
@@ -371,7 +392,25 @@ to arrival-storage
     set unoccupied storage with [ not any? boxes-here ]
       ask max-one-of unassigned [ priority ]
       [
-        move-to min-one-of unoccupied [distance myself]
+        let destination min-one-of unoccupied [ distance myself ]
+        let target self
+        
+        ifelse lifters-available
+        [
+          if not any? my-in-links [
+            let dist-to-dest distance destination
+            
+            ask min-one-of lifters [ distance self ]
+            [
+              create-link-to target
+              let cost distance target + dist-to-dest
+              set task-list lput (list target destination cost) task-list
+            ]
+          ]
+        ]
+        [
+          move-to destination
+        ]
       ]
   ]
 end
@@ -387,9 +426,27 @@ to nearest-storage
     [
       ask max-one-of unassigned [ priority ]
       [
-        ifelse any? stored
-        [move-to min-one-of unoccupied [distance one-of stored]]
-        [move-to one-of unoccupied]
+        let destination one-of unoccupied
+        if any? stored
+        [ set destination min-one-of unoccupied [ distance one-of stored ] ]
+        let target self
+        
+        ifelse lifters-available
+        [
+          if not any? my-in-links [
+            let dist-to-dest distance destination
+            
+            ask min-one-of lifters [ distance self ]
+            [
+              create-link-to target
+              let cost distance target + dist-to-dest
+              set task-list lput (list target destination cost) task-list
+            ]
+          ]
+        ]
+        [
+          move-to destination
+        ]
       ]
     ]
   ]
@@ -566,7 +623,7 @@ CHOOSER
 storage-method
 storage-method
 "cn-arrivals" "random" "nearest" "arrival" "classified"
-0
+2
 
 MONITOR
 707
@@ -690,11 +747,11 @@ HORIZONTAL
 SWITCH
 12
 380
-128
+164
 413
-lifters-on
-lifters-on
-1
+lifters-available
+lifters-available
+0
 1
 -1000
 
