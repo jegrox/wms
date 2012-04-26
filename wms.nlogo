@@ -757,6 +757,17 @@ lifters-available
 1
 -1000
 
+MONITOR
+808
+73
+893
+118
+displacement
+total-displacement
+3
+1
+11
+
 @#$#@#$#@
 WHAT IS IT?
 -----------
