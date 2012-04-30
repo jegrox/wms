@@ -24,6 +24,8 @@ globals
   stored     ;;boxes that are already in the storage area
   free       ;;available patches in teh consuption-area
   
+  avg-utility
+  
 ]
 
 breed [ boxes box ]
@@ -45,7 +47,7 @@ lifters-own
 patches-own
 [
   product_type
-  utility
+  ;utility
 ]
 
 ;breed [ consumers consumer ]
@@ -63,7 +65,7 @@ to setup
 end
 
 to do
-  new-arrivals
+  ;new-arrivals
   store-arrivals
   select-for-consumption
   consume
@@ -71,6 +73,7 @@ to do
   calculate-percentage
   tick
   do-plots
+  shift-priorities
 end
 
 to setup-globals
@@ -80,6 +83,7 @@ to setup-globals
   set grid-x-inc 16 / grid-size-x
   set grid-y-inc world-height / grid-size-y
   set consumption-inc world-height / consumption-areas 
+  set avg-utility 0
 end
 
 ;; Make the patches have appropriate colors, set up the storage agentset and consumer agentsets,
@@ -117,7 +121,7 @@ to setup-patches
     ;if pycor <= 8 [ set product_type product_no]
     ]
   ]
-  ask patches [ set utility 0 ]
+  ;ask patches [ set utility 0 ]
   
 end
 
@@ -125,8 +129,9 @@ to setup-turtles
   create-boxes initial-boxes
   ask boxes
   [
-    set priority random 10
+    ;set priority random 10
     set product random consumption-areas + 1
+    set priority consumption-areas - abs (product - priority-shift)
     ifelse start-at-storage
     [ move-to one-of storage with [ not any? other turtles-here ] ]
     [ move-to one-of arrival-area with [ not any? other turtles-here ] ]
@@ -140,14 +145,16 @@ to setup-turtles
     set subtask 0
     set task-list []
   ]
-  
+end
+
+to shift-priorities
 end
 
 to new-arrivals
   if ticks mod arrival-rate = 0 [
     create-boxes arrival-quantity  [
-      set priority random 10
-      set product random 3 + 1
+      set product random consumption-areas + 1
+      set priority consumption-areas - abs (product - priority-shift)
       ifelse any? arrival-area with [ not any? other turtles-here ]
       [ move-to one-of arrival-area with [ not any? other turtles-here ] ]
       [ user-message (word "maximum occupancy reached")]
@@ -160,6 +167,8 @@ to store-arrivals
   ;cn-arrivals
   if storage-method = "cn-arrivals"
       [cn-arrivals]
+  if storage-method = "cn-combined"
+      [cn-combined]
   if storage-method = "random"
       [random-storage]
   if storage-method = "nearest"
@@ -174,13 +183,21 @@ end
 to select-for-consumption
   if ticks mod consumption-rate = 0
   [
-    cn-consumption
+    if consumption-method = "cn-consumption"
+      [cn-consumption]
+    if consumption-method = "cn-combined"
+      [ ifelse count boxes-on storage >= n-of-lifters
+        [ cn-consumption-combined ]
+        [ cn-consumption ]
+      ]
+    if consumption-method = "random"
+    [random-consumption]
   ]
 end
 
 to cn-arrivals
   set unassigned boxes-on arrival-area
-  if any? unassigned
+  if any? unassigned with [ not any? my-in-links ]
   [
     set unoccupied storage with [ not any? boxes-here ]
     ;ask unoccupied
@@ -194,11 +211,49 @@ to cn-arrivals
           ifelse lifters-available
           [
             if not any? my-in-links [
-            
-            
               let dist-to-dest distance destination
               
-              ask min-one-of lifters [ distance self ]
+            let worker one-of lifters
+            if lifter-criteria = "closest" [ set worker min-one-of lifters [ distance self ] ]
+            if lifter-criteria = "workload" [ set worker min-one-of lifters [ length task-list ] ]
+            ask worker
+              [ 
+                create-link-to target
+                let cost distance target + dist-to-dest
+                set task-list lput (list target destination cost) task-list
+              ]
+            ]
+          ]
+          [
+            move-to destination
+          ]
+        ]
+      ]
+  ]
+end
+
+to cn-combined
+  set unassigned boxes-on arrival-area
+  if any? unassigned with [ not any? my-in-links ]
+  [
+    set unoccupied storage with [ not any? boxes-here ]
+    ;ask unoccupied
+    ;[
+      ask max-n-of n-of-lifters unassigned [ priority ]
+      [
+        let storage-type product
+        let destination min-one-of unoccupied [distance one-of consum with [ product_type = storage-type ] ]
+        let target self
+        if any? patch-set destination [
+          ifelse lifters-available
+          [
+            if not any? my-in-links [
+              let dist-to-dest distance destination
+              
+            let worker one-of lifters
+            if lifter-criteria = "closest" [ set worker min-one-of lifters [ distance self ] ]
+            if lifter-criteria = "workload" [ set worker min-one-of lifters [ length task-list ] ]
+            ask worker
               [ 
                 create-link-to target
                 let cost distance target + dist-to-dest
@@ -218,10 +273,6 @@ to cn-consumption
   set stored boxes-on storage
   if any? stored
   [
-    ;set free consum with [not any? boxes-here]
-    ;if any? free [
-      ;ask one-of free
-      ;[ 
     ask max-one-of stored [ priority ] 
       [
         let consum-type product
@@ -234,7 +285,10 @@ to cn-consumption
             if not any? my-in-links [
               let dist-to-dest distance destination
               
-              ask min-one-of lifters [ distance self ]
+              let worker one-of lifters
+              if lifter-criteria = "closest" [ set worker min-one-of lifters [ distance self ] ]
+              if lifter-criteria = "workload" [ set worker min-one-of lifters [ length task-list ] ]
+              ask worker
               [
                 create-link-to target
                 let cost distance target + dist-to-dest
@@ -250,16 +304,92 @@ to cn-consumption
   ]
 end
 
+to cn-consumption-combined
+  set stored boxes-on storage
+  if any? stored
+  [
+    ask max-n-of n-of-lifters stored [ priority ] 
+      [
+        let consum-type product
+        let destination one-of consum with [ not any? boxes-here and product_type = consum-type ]
+        let target self
+        
+        if any? patch-set destination [
+          ifelse lifters-available
+          [
+            if not any? my-in-links [
+              let dist-to-dest distance destination
+              
+              let worker one-of lifters
+              if lifter-criteria = "closest" [ set worker min-one-of lifters [ distance self ] ]
+              if lifter-criteria = "workload" [ set worker min-one-of lifters [ length task-list ] ]
+              ask worker
+              [
+                create-link-to target
+                let cost distance target + dist-to-dest
+                set task-list lput (list target destination cost) task-list
+              ]
+            ]
+          ]
+          [ 
+            move-to destination
+          ]
+        ]
+      ]
+  ]
+end
+
+to random-consumption
+  set stored boxes-on storage
+  if any? stored
+  [
+    ask one-of stored
+    [
+        let consum-type product
+        let destination one-of consum with [ not any? boxes-here and product_type = consum-type ]
+        let target self
+        
+        if any? patch-set destination [
+          ifelse lifters-available
+          [
+            if not any? my-in-links [
+              let dist-to-dest distance destination
+              
+              let worker one-of lifters
+              if lifter-criteria = "closest" [ set worker min-one-of lifters [ distance self ] ]
+              if lifter-criteria = "workload" [ set worker min-one-of lifters [ length task-list ] ]
+              ask worker
+              [
+                create-link-to target
+                let cost distance target + dist-to-dest
+                set task-list lput (list target destination cost) task-list
+              ]
+            ]
+          ]
+          [ 
+            move-to destination
+          ]
+        ]
+    ]
+  ]
+end
+
 to consume
   if ticks mod consumption-rate = 0
   [
-    let next-type random consumption-areas + 1
-    ask consum with [product_type = next-type ]
-    [
-      let to-be-consumed one-of boxes-here with [ not any? my-in-links ]
-      if any? turtle-set to-be-consumed
+    ;let next-type random consumption-areas + 1
+    let product-list n-values consumption-areas [ ? + 1]
+    foreach product-list [
+      ask one-of consum with [product_type = ? ]
       [
-        ask to-be-consumed [ die ]
+        let to-be-consumed one-of boxes-here with [ not any? my-in-links ]
+        if any? turtle-set to-be-consumed
+        [
+          ask to-be-consumed [ 
+            set avg-utility avg-utility + priority
+            die 
+          ]
+        ]
       ]
     ]
   ]
@@ -327,6 +457,7 @@ to do-lifter-task
             ask link [who] of self [who] of target [ untie die ]
             ;bk 1
             ;last first task-list
+            set total-displacement total-displacement + last first task-list
             set task-list but-first task-list
             set subtask 0
             ]
@@ -341,42 +472,7 @@ end
 to zeuthen
 end
 
-to complete-task-2
-  ;set tasks []
-  ;let task1 []
-  ;set task1 lput one-of boxes task1
-  ;set task1 lput one-of storage task1
-  ;set tasks lput task1 tasks
-  
-  let target one-of boxes
-  let destination one-of storage
-  
-  let bfs-list []
-  let explored []
-  
-  ask lifter 20 [
-    let current target
-    let current-utility 0
-    ask current [ set utility 100 ]
-    set bfs-list fput patch-at [xcor] of target [ycor] of target bfs-list
-    while [ patch-here != patch-at [pxcor] of current [pycor] of current ]
-    [
-      ask current [
-        set current-utility utility
-        ask neighbors4 [
-          if not member? self explored [ set bfs-list lput self bfs-list 
-            set utility current-utility - 1]
-        ]
-        set bfs-list but-first bfs-list
-        set plabel utility
-        set plabel-color 0
-        set explored lput current explored
-        set current first bfs-list
-      ]
-    ]
-  ]
-  tick
-end
+
 
 ;;Stores the boxes randomly in any available space in the storage area
 to random-storage
@@ -384,7 +480,7 @@ to random-storage
   if any? unassigned
   [
     set unoccupied storage with [ not any? boxes-here ]
-      ask max-one-of unassigned [ priority ]
+      ask one-of unassigned
       [
         let destination one-of unoccupied
         let target self
@@ -393,7 +489,10 @@ to random-storage
         [
           if not any? my-in-links [
             let dist-to-dest distance destination
-            ask min-one-of lifters [ distance self ]
+            let worker one-of lifters
+            if lifter-criteria = "closest" [ set worker min-one-of lifters [ distance self ] ]
+            if lifter-criteria = "workload" [ set worker min-one-of lifters [ length task-list ] ]
+            ask worker
             [
               create-link-to target
               let cost distance target + dist-to-dest
@@ -477,7 +576,7 @@ to nearest-storage
 end
 
 ;;Stores the boxes in the nearest available space to another stored box of same charateristic, in this case of same color. 
-to classified-storage
+to classified-storage2
   set unassigned boxes-on arrival-area
   set stored boxes-on storage
   if any? unassigned
@@ -486,9 +585,63 @@ to classified-storage
       ask max-one-of unassigned [ priority ]
       [
         let c [color] of self
-        ifelse any? stored with [color = c]
-        [move-to (min-one-of unoccupied [distance one-of stored with [color = c ]])]
-        [move-to one-of unoccupied]
+        let target self
+        ifelse lifters-available
+        [
+          let destination one-of unoccupied
+          if any? stored with [color = c]
+          [ set destination min-one-of unoccupied [distance one-of stored with [color = c ] ] ]
+          if not any? my-in-links [
+          let dist-to-dest distance destination
+              
+          ask min-one-of lifters [ distance self ]
+            [
+              create-link-to target
+              let cost distance target + dist-to-dest
+              set task-list lput (list target destination cost) task-list
+            ] 
+          ]
+        ]
+        [   
+          ifelse any? stored with [color = c]
+          [move-to (min-one-of unoccupied [distance one-of stored with [color = c ]])]
+          [move-to one-of unoccupied]
+        ]
+      ]
+  ]
+end
+
+to classified-storage
+  set unassigned boxes-on arrival-area
+  set stored boxes-on storage
+  if any? unassigned
+  [
+    set unoccupied storage with [ not any? boxes-here ]
+      ask max-one-of unassigned [ priority ]
+      [
+        let p [product] of self
+        let target self
+        ifelse lifters-available
+        [
+          let destination one-of unoccupied
+          if any? stored with [product = p]
+          [ set destination min-one-of unoccupied [distance one-of stored with [product = p ] ] ]
+          if not any? my-in-links [
+          let dist-to-dest distance destination
+              
+          ask min-one-of lifters [ length task-list ]
+            [
+              create-link-to target
+              let cost distance target + dist-to-dest
+              set task-list lput (list target destination cost) task-list
+            ] 
+          ]
+        ]
+        [   
+          ifelse any? stored with [product = p]
+          [move-to (min-one-of unoccupied [distance one-of stored with [product = p]])]
+          [move-to one-of unoccupied]
+        ]
       ]
   ]
 end
@@ -506,6 +659,10 @@ to do-plots
   plot count boxes-on storage
   set-current-plot-pen "consume"
   plot count boxes-on consumption-area
+  
+  set-current-plot "Utility"
+  set-current-plot-pen "avg-utility"
+  plot avg-utility * 100 / (ticks + 1)
 end
 
 
@@ -591,7 +748,7 @@ consumption-areas
 consumption-areas
 1
 10
-5
+3
 1
 1
 NIL
@@ -606,7 +763,7 @@ initial-boxes
 initial-boxes
 0
 100
-80
+70
 1
 1
 NIL
@@ -646,8 +803,8 @@ CHOOSER
 143
 storage-method
 storage-method
-"cn-arrivals" "random" "nearest" "arrival" "classified"
-0
+"cn-arrivals" "cn-combined" "random" "nearest" "arrival" "classified"
+5
 
 MONITOR
 707
@@ -721,7 +878,7 @@ arrival-rate
 arrival-rate
 0
 100
-98
+27
 1
 1
 NIL
@@ -734,19 +891,19 @@ SLIDER
 364
 consumption-rate
 consumption-rate
-0
+1
 100
-73
+20
 1
 1
 NIL
 VERTICAL
 
 INPUTBOX
-83
-149
-168
-209
+196
+374
+281
+434
 arrival-quantity
 5
 1
@@ -789,6 +946,59 @@ total-displacement
 3
 1
 11
+
+SLIDER
+514
+377
+686
+410
+priority-shift
+priority-shift
+1
+consumption-areas
+3
+1
+1
+NIL
+HORIZONTAL
+
+PLOT
+718
+382
+918
+532
+Utility
+time
+utility
+0.0
+10.0
+0.0
+0.5
+true
+false
+PENS
+"default" 1.0 0 -16777216 true
+"avg-utility" 1.0 0 -16777216 true
+
+CHOOSER
+34
+478
+172
+523
+lifter-criteria
+lifter-criteria
+"closest" "random" "workload"
+2
+
+CHOOSER
+24
+157
+185
+202
+consumption-method
+consumption-method
+"random" "cn-consumption" "cn-combined"
+2
 
 @#$#@#$#@
 WHAT IS IT?
