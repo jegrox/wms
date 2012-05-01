@@ -74,6 +74,7 @@ to do
   tick
   do-plots
   shift-priorities
+  if turn-negotiation [ negotiation ]
 end
 
 to setup-globals
@@ -413,7 +414,6 @@ to do-lifter-task
       let destination item 1 first task-list
        
       if subtask = 0 [
-        show task-list
         ;create-link-to target
         face min-one-of (neighbors4 with [pcolor != black]) [distance target]
         fd 1
@@ -646,6 +646,106 @@ to classified-storage
   ]
 end
 
+to negotiation
+  ask min-one-of lifters [ length task-list ]
+  [
+    let u 0
+    foreach task-list [ set u u + item 2 ? ]
+    let tasks task-list
+    let other-tasks []
+    let working-lifter max-one-of lifters [ length task-list ]
+    ask working-lifter
+    [
+      set other-tasks task-list
+    ]
+    
+    let i 0
+    foreach other-tasks [
+      let target first ?
+      let destination item 1 ?
+      let cost distance target
+      ask target [ set cost cost + distance destination ]
+      
+      let new-task-cost replace-item 2 ? cost
+      set other-tasks replace-item i other-tasks new-task-cost
+      set i i + 1
+      ;set ? replace-item 2 ? cost
+    ]
+    
+    set tasks sentence tasks other-tasks
+    
+    let delta []
+    set i 0
+    while [ i <= length tasks ] 
+    [
+      let delta1 sublist tasks 0 i
+      let delta2 sublist tasks i length tasks
+      ;if not empty? delta1 [ set delta1 reduce [ (sentence ?1) ] delta1 ]
+      ;if not empty? delta2 [ set delta2 reduce [ (sentence ?1) ] delta2 ]
+      set delta lput (list delta1 delta2) delta
+      set i i + 1
+    ]
+    
+    let other-delta delta
+    
+    let delta-costs []
+    foreach delta [
+      let cost 0
+      ;if any? set cost cost + last first ?
+      foreach first ? [ 
+        if not empty? ? [set cost cost + last ?]
+      ]
+      set delta-costs lput cost delta-costs
+    ]
+
+    set i 0
+    foreach delta-costs [
+      let next-delta item i delta
+      set next-delta lput (u - ?) next-delta
+      set delta replace-item i delta next-delta
+      set i i + 1
+    ]
+    
+    let delta-costs2 []
+    ask working-lifter [
+      foreach other-delta [
+        let cost 0
+        foreach first ? [
+          if not empty? ? [set cost cost + last ?]
+        ]
+        set delta-costs2 lput cost delta-costs2
+      ]
+      
+      set i 0
+      foreach delta-costs2 [
+        let next-delta item i other-delta
+        set next-delta lput (u - ?) next-delta
+        set other-delta replace-item i delta next-delta
+        set i i + 1
+    ]
+    
+    set delta sort-by [ last ?1 > last ?2 ] delta 
+    set other-delta sort-by [ last ?1 > last ?2 ] other-delta ]
+    
+    let my-deal first delta
+    let other-deal first other-delta
+    
+    while [ last other-deal < last my-deal ] [
+      set delta butfirst delta
+      set other-delta butfirst other-delta
+      set my-deal first delta
+      set other-deal first other-delta
+    ]
+    set my-deal butlast my-deal
+    
+    show task-list
+    show my-deal
+  
+    set task-list first my-deal
+    ask working-lifter [ set task-list last my-deal ]
+  ] 
+end
+
 ;; Calculates the percentage of occupied storage 
 to calculate-percentage
     set percent-occupy-storage ((count boxes-on storage)/ (count storage)) * 100
@@ -804,7 +904,7 @@ CHOOSER
 storage-method
 storage-method
 "cn-arrivals" "cn-combined" "random" "nearest" "arrival" "classified"
-5
+1
 
 MONITOR
 707
@@ -988,7 +1088,7 @@ CHOOSER
 lifter-criteria
 lifter-criteria
 "closest" "random" "workload"
-2
+0
 
 CHOOSER
 24
@@ -999,6 +1099,17 @@ consumption-method
 consumption-method
 "random" "cn-consumption" "cn-combined"
 2
+
+SWITCH
+214
+463
+375
+496
+turn-negotiation
+turn-negotiation
+1
+1
+-1000
 
 @#$#@#$#@
 WHAT IS IT?
