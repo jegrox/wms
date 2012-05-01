@@ -718,7 +718,7 @@ grid-size-x
 grid-size-x
 1
 10
-10
+8
 1
 1
 NIL
@@ -804,7 +804,7 @@ CHOOSER
 storage-method
 storage-method
 "cn-arrivals" "cn-combined" "random" "nearest" "arrival" "classified"
-5
+4
 
 MONITOR
 707
@@ -905,7 +905,7 @@ INPUTBOX
 281
 434
 arrival-quantity
-5
+10
 1
 0
 Number
@@ -998,22 +998,80 @@ CHOOSER
 consumption-method
 consumption-method
 "random" "cn-consumption" "cn-combined"
-2
+0
 
 @#$#@#$#@
 WHAT IS IT?
 -----------
-This section could give a general understanding of what the model is trying to show or explain.
+In a warehouse you need to manage incoming/outgoing products, storage capacity and product replenishment, overall maintain the product flow whit in the installations. Here we try to simulate this implementing agents utilizing contract-net and negotiation algorithms whit which we hope to demonstrate that this can improve the overall functionality of a warehouse management system by comparing it against a more standard method such as random storage and controlling different aspects such as quantity of products arriving, number of lifters, product types, and utilizing different settings like arrival and consumption rate, storage method among other.
 
 
 HOW IT WORKS
 ------------
+As new boxes arrive they will signal they need to be stored, boxes will apear in arrival area in a determined number and in a specified time rate.
+Lifters will then move the boxes from arrival area to available space in storage area according to the settings of the model this is priority, storage method, distance, etc. They will sit in this space untill required in consumption. Once required the lifters will move the boxes from storage to consumption.
+There will be different consumption areas depending on the settings in  which boxes will be consumed (die) acording to priority, product type or consumption method in a given rate.    
+
+
 This section could explain what rules the agents use to create the overall behavior of the model.
 
 
 HOW TO USE IT
 -------------
-This section could explain how to use the model, including a description of each of the items in the interface tab.
+The model has the following controls on the interface.
+
+Settings:
+
+Initialize the model by pressing SETUP, and press GO to run it.
+
+Buttons:
+SETUP - generates a new storage grid based on the current GRID-SIZE-X and GRID-SIZE-Y initial-boxes number of initial boxes, N-lifters number of lifters and conusmption areas. This also clears all the plots. 
+GO - runs the simulation indefinitely.
+
+Choosers:
+STORAGE-METHOD - Allows you to choose between different storage methods:
+                 CN-ARRIVAL.-
+                 CN-COMBINED.-
+		 RANDOM.- Stores the boxes randomly in any available space in the storage area.
+		 NEAREST.- Stores the boxes in the available space closest to any stored boxed.
+		 ARRIVAL.- Stores the boxes in the nearest available space from arrival.
+		 CLASSIFIED.- Stores the boxes in the nearest available space to another stored box of same charateristic.
+CONSUMPTION-METHOD - Allows you to choose between different consumption methods:
+                     RANDOM.-
+                     CN-CONSUMPTION.-
+		     CN-COMBINED.- 
+LIFTER-CRITERIA - Allows you to choose between different lifter criterias:
+		  CLOSEST.-
+		  RANDOM.-
+		  WORKLOAD.-
+
+Sliders:
+GRID-SIZE-X - sets the number of horizontal storage spaces there are (you must press the SETUP button to see the change) 
+GRID-SIZE-Y - sets the number of vertical storage spaces there are (you must press the SETUP button to see the change) 
+CONSUPMTION-AREAS - sets the number of consumption areas there are (you must press the SETUP button to see the change)
+INITIAL-BOXES - sets the number of boxes in the begging of the model (you must press the SETUP button to see the change)
+No-OF-LIFTERS - sets the number of lifters ther are (you must press the SETUP button to see the change)
+ARRIVAL-RATE - controls the rate in wich new boxes arrive this is the ticks it takes for new boxes to appear.
+CONSUMPTION-RATE - controls the rate in wich the boxes are consume this is the in how many tick boxes are consumed (die).
+PRIORITY-SHIFT - controls the preferd priority of the boxes to be consume.
+
+Switches:
+START-AT-STORAGE? - toggles the initial area of boxes, this is if if there is initial inventory at storage area or start from empty storage, no initial inventory.
+LIFTERS_AVAILABLE? - toggles wheter thera are lifters in the enviroment to move the boxes or not and boxes move by themselfs.
+
+Inputs:
+ARRIVAL-QUANTITY - allows you to enter the number of boxes you want to arrive.
+
+Monitors:
+ARRIVE - shows the number of boxes in arrival area.
+STORED - shows the number of boxes in storage.
+ON-CONSUMPTION - shows the number of boxes in cosumption.
+%-STORAGE - shows the percentage of storage occupied.
+DISPLACEMENT - shows the total distance covered by all the lifters.
+
+Plots:
+TOTALS - displays the number of boxes in each area trough time.
+UTILITY - displays the utitlity of the current setting trough time.
 
 
 THINGS TO NOTICE
@@ -1036,14 +1094,9 @@ NETLOGO FEATURES
 This section could point out any especially interesting or unusual features of NetLogo that the model makes use of, particularly in the Procedures tab.  It might also point out places where workarounds were needed because of missing features.
 
 
-RELATED MODELS
---------------
-This section could give the names of models in the NetLogo Models Library or elsewhere which are of related interest.
-
-
 CREDITS AND REFERENCES
 ----------------------
-This section could contain a reference to the model's URL on the web if it has one, as well as any other necessary credits or references.
+This model was programmed by Jorge Candelaria 787542 Ulises Chavez 538968, as an assignment for the MultiAgent Systems course.
 @#$#@#$#@
 default
 true
