@@ -78,7 +78,9 @@ to do
   calculate-tstored
   do-plots
   shift-priorities
-  if turn-negotiation [ negotiation ]
+  if turn-negotiation [ 
+    if ticks mod 100 = 0 [ negotiation ]
+  ]
 end
 
 to setup-globals
@@ -149,6 +151,7 @@ to setup-turtles
     move-to one-of paths with [ not any? lifters-here ]
     set subtask 0
     set task-list []
+    set label who
   ]
 end
 
@@ -174,7 +177,10 @@ to store-arrivals
   if storage-method = "cn-arrivals"
       [cn-arrivals]
   if storage-method = "cn-combined"
-      [cn-combined]
+      [ ifelse count boxes-on arrival-area >= n-of-lifters
+        [ cn-combined ]
+        [ cn-arrivals ]
+      ]
   if storage-method = "random"
       [random-storage]
   if storage-method = "nearest"
@@ -453,10 +459,16 @@ to do-lifter-task
       ]
       
       if subtask = 2 [
-        ask link [who] of self [who] of target [ tie ] ;set endpoint1 end1 set endpoint2 end2 ]
-        face min-one-of (neighbors4 with [pcolor != black]) [distance destination]
-        fd 1
-        set subtask 3
+        ifelse any? link-set link [who] of self [who] of target [
+          ask link [who] of self [who] of target [ tie ] ;set endpoint1 end1 set endpoint2 end2 ]
+          face min-one-of (neighbors4 with [pcolor != black]) [distance destination]
+          fd 1
+          set subtask 3
+        ] 
+        [ 
+          set task-list but-first task-list
+          set subtask 0 
+        ]
       ]
       if subtask = 3 [
         ;ifelse patch-ahead 1 != destination ;xcor != [xcor] of destination and ycor != [ycor] of destination ]
@@ -465,10 +477,11 @@ to do-lifter-task
           ifelse member? destination frontier
           [ 
             face destination
-            ask link [who] of self [who] of target [ untie die ]
-            ;bk 1
-            ;last first task-list
-            set total-displacement total-displacement + last first task-list
+            if any? link-set link [who] of self [who] of target
+              [ 
+                ask link [who] of self [who] of target [ untie die ] 
+                set total-displacement total-displacement + last first task-list 
+              ]                    
             set task-list but-first task-list
             set subtask 0
             ]
@@ -662,7 +675,7 @@ to classified-storage
 end
 
 to negotiation
-  ask min-one-of lifters [ length task-list ]
+  ask one-of lifters ;[ length task-list ]
   [
     let u 0
     foreach task-list [ set u u + item 2 ? ]
@@ -757,7 +770,21 @@ to negotiation
     show my-deal
   
     set task-list first my-deal
-    ask working-lifter [ set task-list last my-deal ]
+    if any? my-out-links [
+      ask my-out-links [
+        untie
+        die
+      ]
+    ]
+    ask working-lifter [
+      if any? my-out-links [
+        ask my-out-links [
+          untie
+          die
+        ]
+      ]
+      set task-list last my-deal
+    ]
   ] 
 end
 
@@ -924,7 +951,7 @@ CHOOSER
 storage-method
 storage-method
 "cn-arrivals" "cn-combined" "random" "nearest" "arrival" "classified"
-1
+5
 
 MONITOR
 707
@@ -1108,7 +1135,7 @@ CHOOSER
 lifter-criteria
 lifter-criteria
 "closest" "random" "workload"
-0
+2
 
 CHOOSER
 24
@@ -1127,7 +1154,7 @@ SWITCH
 496
 turn-negotiation
 turn-negotiation
-1
+0
 1
 -1000
 
