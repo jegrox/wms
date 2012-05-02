@@ -1138,20 +1138,20 @@ GO - runs the simulation indefinitely.
 
 Choosers:
 STORAGE-METHOD - Allows you to choose between different storage methods:
-                 CN-ARRIVAL.-
-                 CN-COMBINED.-
+                 CN-ARRIVAL.- CN with a simple criterion: Select the box with the highest priority, and this box in turn selects the storage space closest to consumption area.
+                 CN-COMBINED.- Similar to CN-ARRIVAL, but selects n boxes with the highest priority.
 		 RANDOM.- Stores the boxes randomly in any available space in the storage area.
 		 NEAREST.- Stores the boxes in the available space closest to any stored boxed.
 		 ARRIVAL.- Stores the boxes in the nearest available space from arrival.
 		 CLASSIFIED.- Stores the boxes in the nearest available space to another stored box of same charateristic.
-CONSUMPTION-METHOD - Allows you to choose between different consumption methods:
-                     RANDOM.-
-                     CN-CONSUMPTION.-
-		     CN-COMBINED.- 
-LIFTER-CRITERIA - Allows you to choose between different lifter criterias:
-		  CLOSEST.-
-		  RANDOM.-
-		  WORKLOAD.-
+CONSUMPTION-METHOD - Allows you to choose between different methods to select the next box to move to the shipping or consumption area:
+                     RANDOM.- Selects the next box randomly.
+                     CN-CONSUMPTION.- Selects the box with the highest priority. The box in turn selects the conumption space based on product type and distance.
+		     CN-COMBINED.- Similar to CN-CONSUMPTION, but selects the n boxes with the highest priority.
+LIFTER-CRITERIA - Allows you to choose between different criteria to select a lifter for the task of moving a box:
+		  CLOSEST.- Select the closest to the box.
+		  RANDOM.- Select a lifter at random.
+		  WORKLOAD.- Select the lifter with the lower number of tasks pending.
 
 Sliders:
 GRID-SIZE-X - sets the number of horizontal storage spaces there are (you must press the SETUP button to see the change) 
@@ -1184,13 +1184,18 @@ UTILITY - displays the utitlity of the current setting trough time.
 
 THINGS TO NOTICE
 ----------------
-This section could give some ideas of things for the user to notice while running the model.
+- Changing the values of different controls (see Things to Try), changes the behavior like follows:
+  - Boxes can be stored with different arrangements, some closer to the shipping area, arrival area, or just close to boxes with certain characteristics.
+  - Lifter agents task allocation changes how much work each lifter has. Sometimes, the work load will be poorly balanced, but with other control values, the work load will be more even. (See Things to Try).
+  - See how the utility changes over time, and how fast it grows with different configurations.
 
 
 THINGS TO TRY
 -------------
-This section could give some ideas of things for the user to try to do (move sliders, switches, etc.) with the model.
-
+- Be sure to try different storage and consumption methods and see how the the simulation behavior changes.
+- Changing the lifter criteria you can see how the lifter agents change behavior. In some cases, tasks allocation will be uneven, but with the "workload" option all the
+lifters should be busy most of the time.
+- Be sure to use the priority-shift slider and see how the boxes accomodation changes. This will increase the demand of certain product types. 
 
 EXTENDING THE MODEL
 -------------------
@@ -1204,7 +1209,7 @@ This section could point out any especially interesting or unusual features of N
 
 CREDITS AND REFERENCES
 ----------------------
-This model was programmed by Jorge Candelaria 787542 Ulises Chavez 538968, as an assignment for the MultiAgent Systems course.
+This model was programmed by Jorge Candelaria 787542 and Ulises Chavez 538968, as an assignment for the MultiAgent Systems course.
 @#$#@#$#@
 default
 true
