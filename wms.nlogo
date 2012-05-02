@@ -4,7 +4,10 @@ globals
   grid-y-inc               ;; the amount of storage patches in the y direction
   consumption-inc          ;; the amount of consumption-areas
   percent-occupy-storage   ;; what percent of storage is occupy
-  total-displacement
+  total-displacement       ;; total displacment covered by all the lifters
+  tarrived
+  tstored
+  tconsumed
   
   ;; patch areas
   arrival-area             ;; area for arrival
@@ -70,8 +73,9 @@ to do
   select-for-consumption
   consume
   do-lifter-task
-  calculate-percentage
   tick
+  calculate-percentage
+  calculate-tstored
   do-plots
   shift-priorities
   if turn-negotiation [ negotiation ]
@@ -157,7 +161,8 @@ to new-arrivals
       set product random consumption-areas + 1
       set priority consumption-areas - abs (product - priority-shift)
       ifelse any? arrival-area with [ not any? other turtles-here ]
-      [ move-to one-of arrival-area with [ not any? other turtles-here ] ]
+      [ move-to one-of arrival-area with [ not any? other turtles-here ]
+        set tarrived tarrived + 1 ]
       [ user-message (word "maximum occupancy reached")]
       set label product
     ]
@@ -226,6 +231,7 @@ to cn-arrivals
             ]
           ]
           [
+            set tstored tstored + 1
             move-to destination
           ]
         ]
@@ -263,6 +269,7 @@ to cn-combined
             ]
           ]
           [
+            set tstored tstored + 1
             move-to destination
           ]
         ]
@@ -298,6 +305,7 @@ to cn-consumption
             ]
           ]
           [ 
+            set tstored tstored + 1
             move-to destination
           ]
         ]
@@ -333,6 +341,7 @@ to cn-consumption-combined
             ]
           ]
           [ 
+            set tstored tstored + 1
             move-to destination
           ]
         ]
@@ -368,6 +377,7 @@ to random-consumption
             ]
           ]
           [ 
+            set tstored tstored + 1
             move-to destination
           ]
         ]
@@ -388,7 +398,8 @@ to consume
         [
           ask to-be-consumed [ 
             set avg-utility avg-utility + priority
-            die 
+            set tconsumed tconsumed + 1
+            die
           ]
         ]
       ]
@@ -473,7 +484,6 @@ to zeuthen
 end
 
 
-
 ;;Stores the boxes randomly in any available space in the storage area
 to random-storage
   set unassigned boxes-on arrival-area
@@ -501,6 +511,7 @@ to random-storage
           ]
         ]
         [
+          set tstored tstored + 1
           move-to destination
         ]
       ]
@@ -532,6 +543,7 @@ to arrival-storage
           ]
         ]
         [
+          set tstored tstored + 1
           move-to destination
         ]
       ]
@@ -568,6 +580,7 @@ to nearest-storage
           ]
         ]
         [
+          set tstored tstored + 1
           move-to destination
         ]
       ]
@@ -606,6 +619,7 @@ to classified-storage2
           ifelse any? stored with [color = c]
           [move-to (min-one-of unoccupied [distance one-of stored with [color = c ]])]
           [move-to one-of unoccupied]
+          set tstored tstored + 1
         ]
       ]
   ]
@@ -641,6 +655,7 @@ to classified-storage
           ifelse any? stored with [product = p]
           [move-to (min-one-of unoccupied [distance one-of stored with [product = p]])]
           [move-to one-of unoccupied]
+          set tstored tstored + 1
         ]
       ]
   ]
@@ -751,6 +766,12 @@ to calculate-percentage
     set percent-occupy-storage ((count boxes-on storage)/ (count storage)) * 100
 end
 
+to calculate-tstored
+  let cstored count boxes-on storage
+  let cconsume count boxes-on consumption-area
+  set tstored (cstored + cconsume  + tconsumed)
+end
+
 to do-plots
   set-current-plot "Totals"
   set-current-plot-pen "arrival"
@@ -759,7 +780,6 @@ to do-plots
   plot count boxes-on storage
   set-current-plot-pen "consume"
   plot count boxes-on consumption-area
-  
   set-current-plot "Utility"
   set-current-plot-pen "avg-utility"
   plot avg-utility * 100 / (ticks + 1)
@@ -912,8 +932,8 @@ MONITOR
 764
 58
 arrived
-count boxes-on arrival-area
-3
+tarrived
+0
 1
 11
 
@@ -923,8 +943,8 @@ MONITOR
 834
 58
 stored
-count boxes-on storage
-3
+tstored
+0
 1
 11
 
@@ -933,9 +953,9 @@ MONITOR
 13
 946
 58
-on consumption
-count boxes-on patches with [ pcolor = yellow]
-3
+consumed
+tconsumed
+0
 1
 11
 
@@ -1005,7 +1025,7 @@ INPUTBOX
 281
 434
 arrival-quantity
-5
+10
 1
 0
 Number
@@ -1116,6 +1136,28 @@ WHAT IS IT?
 -----------
 In a warehouse you need to manage incoming/outgoing products, storage capacity and product replenishment, overall maintain the product flow whit in the installations. Here we try to simulate this implementing agents utilizing contract-net and negotiation algorithms whit which we hope to demonstrate that this can improve the overall functionality of a warehouse management system by comparing it against a more standard method such as random storage and controlling different aspects such as quantity of products arriving, number of lifters, product types, and utilizing different settings like arrival and consumption rate, storage method among other.
 
+The agents in this enviroment are:
+
+-Boxes: this agents represent the product boxes that are stores in a warehouse, they can move or be moved on the different areas of the enviroment from arrival to storage and from storgae to consumption area, thay can have different product type and priority.
+-Lifters: The main function of this agents is to move the box agents from one area to another.
+
+Agentsets
+-Storage: represent the storage spaces that a box can occupy in the enviroment.
+-Paths: represent the patches where the lifters can move trough.
+-Consum: represnt the final stage area where the boxes can be conusmed posibly acording to there priority and type. 
+
+Helper agentsets
+-Assigned: represent the boxes that have already being allocated.
+-Unassigned: represent the boxes that are ready for storage assignation.
+-Unoccupied: represnt the patches that can hold a box.
+-Boxes-with-type: represent the boxes that have the same type as the next order.
+-Stored: represent the boxes that are already in the storage area.
+-Free: represnt the available patches in the consuption-area.
+
+The cooperation between agents
+
+The negotiation
+
 
 HOW IT WORKS
 ------------
@@ -1204,7 +1246,7 @@ This section could point out any especially interesting or unusual features of N
 
 CREDITS AND REFERENCES
 ----------------------
-This model was programmed by Jorge Candelaria 787542 Ulises Chavez 538968, as an assignment for the MultiAgent Systems course.
+This model was programmed by Jorge Candelaria 787542 and Ulises Chavez 538968, as an assignment for the MultiAgent Systems course.
 @#$#@#$#@
 default
 true
