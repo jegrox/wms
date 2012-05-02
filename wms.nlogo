@@ -11,8 +11,8 @@ globals
   
   ;; patch areas
   arrival-area             ;; area for arrival
-  consumption-area         ;; paths for consumption area
-  consumption-area-paths   ;; area for consumption
+  consumption-area         ;; area for consumption
+  consumption-area-paths   ;; paths for consumption area
   
   ;; patch agentset
   storage ;;agentset containing the patches that are storages
@@ -68,7 +68,7 @@ to setup
 end
 
 to do
-  ;new-arrivals
+  new-arrivals
   store-arrivals
   select-for-consumption
   consume
@@ -81,6 +81,7 @@ to do
   if turn-negotiation [ 
     if ticks mod 100 = 0 [ negotiation ]
   ]
+  if ticks = 1000 [stop] 
 end
 
 to setup-globals
@@ -124,8 +125,6 @@ to setup-patches
     [
     if pycor <= consumption-inc * product_no and pycor > consumption-inc * (product_no - 1)  [ set product_type product_no ]
     set product_no product_no - 1
-    ;if pycor <= 16 and pycor > 8 [ set product_type product_no ]
-    ;if pycor <= 8 [ set product_type product_no]
     ]
   ]
   ;ask patches [ set utility 0 ]
@@ -790,7 +789,7 @@ end
 
 ;; Calculates the percentage of occupied storage 
 to calculate-percentage
-    set percent-occupy-storage ((count boxes-on storage)/ (count storage)) * 100
+    set percent-occupy-storage 100 - (((count unoccupied)/ (count storage)) * 100)
 end
 
 to calculate-tstored
@@ -864,8 +863,8 @@ SLIDER
 grid-size-x
 grid-size-x
 1
-10
-10
+8
+8
 1
 1
 NIL
@@ -1025,7 +1024,7 @@ arrival-rate
 arrival-rate
 0
 100
-27
+50
 1
 1
 NIL
@@ -1084,10 +1083,10 @@ lifters-available
 -1000
 
 MONITOR
-808
-73
-893
-118
+792
+72
+877
+117
 displacement
 total-displacement
 3
@@ -1135,7 +1134,7 @@ CHOOSER
 lifter-criteria
 lifter-criteria
 "closest" "random" "workload"
-2
+1
 
 CHOOSER
 24
@@ -1145,7 +1144,7 @@ CHOOSER
 consumption-method
 consumption-method
 "random" "cn-consumption" "cn-combined"
-2
+0
 
 SWITCH
 214
@@ -1268,12 +1267,7 @@ lifters should be busy most of the time.
 
 EXTENDING THE MODEL
 -------------------
-This section could give some ideas of things to add or change in the procedures tab to make the model more complicated, detailed, accurate, etc.
-
-
-NETLOGO FEATURES
-----------------
-This section could point out any especially interesting or unusual features of NetLogo that the model makes use of, particularly in the Procedures tab.  It might also point out places where workarounds were needed because of missing features.
+Some validation is required with certain settings in order to prevent the model from exiting unnespectenly like when the storage reaches maximum occupancy and when implementing negotiation some times the task list of the lifters dosent get updated to exclude task allready done by other agents.
 
 
 CREDITS AND REFERENCES
